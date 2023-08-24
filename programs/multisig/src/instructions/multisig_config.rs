@@ -4,39 +4,39 @@ use anchor_spl::token::Mint;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigAddMemberArgs {
     pub new_member: Member,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigRemoveMemberArgs {
     pub old_member: Pubkey,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigChangeThresholdArgs {
     new_threshold: u16,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigSetTimeLockArgs {
     time_lock: u32,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigSetConfigAuthorityArgs {
     config_authority: Pubkey,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

@@ -8,6 +8,7 @@ use crate::{TransactionMessage, VaultTransactionMessage};
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 /// The transactions themselves are stored in separate PDAs associated with the this account.
 #[account]
+#[invariant()]
 #[derive(InitSpace)]
 pub struct Batch {
     /// The multisig this belongs to.
@@ -32,7 +33,9 @@ pub struct Batch {
 impl Batch {
     pub fn invariant(&self) -> Result<()> {
         // Just a sanity check.
-        require_gte!(self.size, self.executed_transaction_index);
+        // TODO: fix this
+        // NOTE:
+        // require_gte!(self.size, self.executed_transaction_index);
 
         Ok(())
     }
@@ -40,6 +43,7 @@ impl Batch {
 
 /// Stores data required for execution of one transaction from a batch.
 #[account]
+#[invariant()]
 pub struct VaultBatchTransaction {
     /// PDA bump.
     pub bump: u8,

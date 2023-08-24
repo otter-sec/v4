@@ -98,9 +98,9 @@ impl ProposalCreate<'_> {
             }
         };
         proposal.bump = *ctx.bumps.get("proposal").unwrap();
-        proposal.approved = vec![];
-        proposal.rejected = vec![];
-        proposal.cancelled = vec![];
+        proposal.approved = Vec::new();
+        proposal.rejected = Vec::new();
+        proposal.cancelled = Vec::new();
 
         Ok(())
     }

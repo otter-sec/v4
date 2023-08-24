@@ -6,6 +6,7 @@ use crate::errors::*;
 /// Each `Proposal` has a 1:1 association with a transaction account, e.g. a `VaultTransaction` or a `ConfigTransaction`;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.
 #[account]
+#[invariant()]
 pub struct Proposal {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -125,7 +126,7 @@ impl Proposal {
 
 /// The status of a proposal.
 /// Each variant wraps a timestamp of when the status was set.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug, Arbitrary)]
 #[non_exhaustive]
 pub enum ProposalStatus {
     /// Proposal is in the draft mode and can be voted on.

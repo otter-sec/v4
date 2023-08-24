@@ -7,6 +7,7 @@ use super::*;
 /// Config transaction can perform a predefined set of actions on the Multisig PDA, such as adding/removing members,
 /// changing the threshold, etc.
 #[account]
+#[invariant()]
 pub struct ConfigTransaction {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -31,13 +32,13 @@ impl ConfigTransaction {
         32 +  // multisig
         32 +  // creator
         8 +   // index
-        1 +   // bump 
+        1 +   // bump
         4 +  // actions vector length
         actions_size
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Arbitrary)]
 #[non_exhaustive]
 pub enum ConfigAction {
     /// Add a new member to the multisig.

@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 
 #[account]
+#[invariant()]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -77,15 +78,15 @@ impl SpendingLimit {
 }
 
 /// The reset period of the spending limit.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, Arbitrary)]
 pub enum Period {
-    /// The spending limit can only be used once.
+    // The spending limit can only be used once.
     OneTime,
-    /// The spending limit is reset every day.
+    // The spending limit is reset every day.
     Day,
-    /// The spending limit is reset every week (7 days).
+    // The spending limit is reset every week (7 days).
     Week,
-    /// The spending limit is reset every month (30 days).
+    // The spending limit is reset every month (30 days).
     Month,
 }
 

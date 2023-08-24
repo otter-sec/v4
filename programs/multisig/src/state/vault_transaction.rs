@@ -8,6 +8,7 @@ use crate::instructions::{CompiledInstruction, MessageAddressTableLookup, Transa
 /// Vault transaction is a transaction that's executed on behalf of the multisig vault PDA
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 #[account]
+#[invariant()]
 pub struct VaultTransaction {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -27,7 +28,7 @@ pub struct VaultTransaction {
     /// When wrapping such transactions into multisig ones, we replace these "ephemeral" signing keypairs
     /// with PDAs derived from the MultisigTransaction's `transaction_index` and controlled by the Multisig Program;
     /// during execution the program includes the seeds of these PDAs into the `invoke_signed` calls,
-    /// thus "signing" on behalf of these PDAs.  
+    /// thus "signing" on behalf of these PDAs.
     pub ephemeral_signer_bumps: Vec<u8>,
     /// data required for executing the transaction.
     pub message: VaultTransactionMessage,
@@ -44,7 +45,7 @@ impl VaultTransaction {
             32 +  // multisig
             32 +  // creator
             8 +   // index
-            1 +   // bump 
+            1 +   // bump
             1 +   // vault_index
             1 +   // vault_bump
             (4 + usize::from(ephemeral_signers_length)) +   // ephemeral_signers_bumps vec
@@ -53,7 +54,7 @@ impl VaultTransaction {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary)]
 pub struct VaultTransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -190,7 +191,7 @@ impl TryFrom<TransactionMessage> for VaultTransactionMessage {
 
 /// Concise serialization schema for instructions that make up a transaction.
 /// Closely mimics the Solana transaction wire format.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary, Default)]
 pub struct MultisigCompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -211,7 +212,7 @@ impl From<CompiledInstruction> for MultisigCompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts into a transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary, Default)]
 pub struct MultisigMessageAddressTableLookup {
     /// Address lookup table account key.
     pub account_key: Pubkey,

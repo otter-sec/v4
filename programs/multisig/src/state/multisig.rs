@@ -6,6 +6,7 @@ use anchor_lang::system_program;
 use crate::errors::*;
 
 #[account]
+#[invariant()]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
@@ -29,7 +30,7 @@ pub struct Multisig {
     /// This index is updated when multisig config (members/threshold/time_lock) changes.
     pub stale_transaction_index: u64,
     /// Reserved for future use.
-    pub _reserved: u8,
+    // pub _reserved: u8,
     /// Bump for the multisig PDA seed.
     pub bump: u8,
     /// Members of the multisig.
@@ -226,7 +227,9 @@ impl Multisig {
     }
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone)]
+#[derive(
+    AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone, Default, Arbitrary, Copy,
+)]
 pub struct Member {
     pub key: Pubkey,
     pub permissions: Permissions,
@@ -241,7 +244,16 @@ pub enum Permission {
 
 /// Bitmask for permissions.
 #[derive(
-    AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug,
+    AnchorSerialize,
+    AnchorDeserialize,
+    InitSpace,
+    Eq,
+    PartialEq,
+    Clone,
+    Copy,
+    Default,
+    Debug,
+    Arbitrary,
 )]
 pub struct Permissions {
     pub mask: u8,
