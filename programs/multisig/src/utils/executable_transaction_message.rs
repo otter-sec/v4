@@ -4,7 +4,6 @@ use std::convert::From;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::program::invoke_signed;
-use anchor_lang::Discriminator;
 use solana_address_lookup_table_program::state::AddressLookupTable;
 
 use crate::errors::*;
@@ -180,11 +179,11 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             // Make sure we don't allow reentrancy of transaction_execute.
             if ix.program_id == id() {
                 require!(
-                    ix.data[..8] != crate::instruction::VaultTransactionExecute::DISCRIMINATOR,
+                    ix.data[..8] != crate::instructions::VaultTransactionExecute::DISCRIMINATOR,
                     MultisigError::ExecuteReentrancy
                 );
                 require!(
-                    ix.data[..8] != crate::instruction::BatchExecuteTransaction::DISCRIMINATOR,
+                    ix.data[..8] != crate::instructions::BatchExecuteTransaction::DISCRIMINATOR,
                     MultisigError::ExecuteReentrancy
                 );
             }
