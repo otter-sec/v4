@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::*;
-
 /// Stores the data required for tracking the status of a multisig proposal.
 /// Each `Proposal` has a 1:1 association with a transaction account, e.g. a `VaultTransaction` or a `ConfigTransaction`;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.

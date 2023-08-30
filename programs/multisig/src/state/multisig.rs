@@ -3,8 +3,6 @@ use std::cmp::max;
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
-use crate::errors::*;
-
 #[account]
 #[invariant()]
 pub struct Multisig {

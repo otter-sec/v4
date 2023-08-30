@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh::get_instance_packed_len;
 
-use crate::errors::*;
 use crate::instructions::{CompiledInstruction, MessageAddressTableLookup, TransactionMessage};
 
 /// Stores data required for tracking the voting and execution status of a vault transaction.

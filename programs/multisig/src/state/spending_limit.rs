@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::*;
-
 #[account]
 #[invariant()]
 pub struct SpendingLimit {

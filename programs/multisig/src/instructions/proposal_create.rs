@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]

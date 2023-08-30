@@ -77,9 +77,9 @@ dependencies = [
 
 [[package]]
 name = "aho-corasick"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6748e8def348ed4d14996fa801f4122cd763fff530258cdc03f64b25f89d3a5a"
+checksum = "0c378d78423fdad8089616f827526ee33c19f2fddbd5de1629152c9593ba4783"
 dependencies = [
  "memchr",
 ]
@@ -258,7 +258,7 @@ dependencies = [
 [[package]]
 name = "anchor-syn"
 version = "0.28.0"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "anyhow",
  "bs58 0.5.0",
@@ -271,12 +271,6 @@ dependencies = [
  "syn 1.0.109",
  "thiserror",
 ]
-
-[[package]]
-name = "android-tzdata"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e999941b234f3131b00bc13c22d06e8c5ff726d1b6318ac7eb276997bbb4fef0"
 
 [[package]]
 name = "anyhow"
@@ -627,11 +621,10 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.26"
+version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec837a71355b28f6556dbd569b37b3f363091c0bd4b2e735674521b4c5fd9bc5"
+checksum = "f56b4c72906975ca04becb8a30e102dfecddd0c06181e3e95ddc444be28881f8"
 dependencies = [
- "android-tzdata",
  "num-traits",
 ]
 
@@ -788,41 +781,6 @@ dependencies = [
  "serde",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "darling"
-version = "0.14.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b750cb3417fd1b327431a470f388520309479ab0bf5e323505daf0290cd3850"
-dependencies = [
- "darling_core",
- "darling_macro",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.14.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "109c1ca6e6b7f82cc233a97004ea8ed7ca123a9af07a8230878fcfda9b158bf0"
-dependencies = [
- "fnv",
- "ident_case",
- "proc-macro2",
- "quote",
- "strsim",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.14.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4aab4dbc9f7611d8b55048a3a16d2d010c2c8334e46304b40ac1cc14bf3b48e"
-dependencies = [
- "darling_core",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -1281,12 +1239,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ident_case"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
-
-[[package]]
 name = "idna"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1383,7 +1335,7 @@ dependencies = [
 [[package]]
 name = "kani"
 version = "0.32.0"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "kani_macros",
 ]
@@ -1391,7 +1343,7 @@ dependencies = [
 [[package]]
 name = "kani_macros"
 version = "0.32.0"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -1496,9 +1448,9 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "memchr"
-version = "2.6.0"
+version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76fc44e2588d5b436dbc3c6cf62aef290f90dab6235744a93dfe1cc18f451e2c"
+checksum = "f478948fd84d9f8e86967bf432640e46adfb5a4bd4f14ef7e864ab38220534ae"
 
 [[package]]
 name = "memmap2"
@@ -1642,8 +1594,8 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "onchor"
-version = "0.2.8"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+version = "0.3.0"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "borsh 0.10.3",
  "hex",
@@ -1661,8 +1613,8 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "otter-solana-macro"
-version = "0.2.0"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+version = "0.3.0"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "kani",
  "otter-solana-macro-core",
@@ -1670,12 +1622,11 @@ dependencies = [
 
 [[package]]
 name = "otter-solana-macro-core"
-version = "0.2.2"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+version = "0.3.0"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "anchor-syn 0.28.0",
  "anyhow",
- "darling",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -1683,8 +1634,8 @@ dependencies = [
 
 [[package]]
 name = "otter-solana-program"
-version = "0.2.7"
-source = "git+https://github.com/otter-sec/verify?branch=upgrades#654555f3aea9814135fdd3d6164ebcb07695d71a"
+version = "0.2.8"
+source = "git+https://github.com/otter-sec/verify?branch=upgrades#b56b05eb2884af3b8a593bd777703136aa97634d"
 dependencies = [
  "borsh 0.10.3",
  "hex",
@@ -2605,12 +2556,6 @@ dependencies = [
  "spl-token",
  "thiserror",
 ]
-
-[[package]]
-name = "strsim"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "subtle"
