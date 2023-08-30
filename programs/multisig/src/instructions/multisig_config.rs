@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::Mint;
 
 use crate::errors::*;
 use crate::state::*;
