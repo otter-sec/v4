@@ -3,14 +3,14 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::utils::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
     pub transaction_message: Vec<u8>,
-    pub memo: Option<String>,
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

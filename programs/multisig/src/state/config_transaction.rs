@@ -38,7 +38,7 @@ impl ConfigTransaction {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Arbitrary, Default)]
 #[non_exhaustive]
 pub enum ConfigAction {
     /// Add a new member to the multisig.
@@ -74,4 +74,6 @@ pub enum ConfigAction {
     },
     /// Remove a spending limit from the multisig.
     RemoveSpendingLimit { spending_limit: Pubkey },
+    #[default]
+    NoAction,
 }

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProposalCreateArgs {
     /// Index of the multisig transaction this proposal is associated with.
     pub transaction_index: u64,

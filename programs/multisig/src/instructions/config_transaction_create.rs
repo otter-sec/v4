@@ -5,7 +5,7 @@ use crate::state::*;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct ConfigTransactionCreateArgs {
     pub actions: Vec<ConfigAction>,
-    pub memo: Option<String>,
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigCreateArgs {
     /// The authority that can configure the multisig: add/remove members, change the threshold, etc.
     /// Should be set to `None` for autonomous multisigs.
@@ -13,8 +13,8 @@ pub struct MultisigCreateArgs {
     pub members: Vec<Member>,
     /// How many seconds must pass between transaction voting settlement and execution.
     pub time_lock: u32,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]
