@@ -17,7 +17,6 @@ pub struct SpendingLimitUseArgs {
 }
 
 #[derive(Accounts)]
-#[invariant()]
 pub struct SpendingLimitUse<'info> {
     /// The multisig account the `spending_limit` is for.
     #[account(
