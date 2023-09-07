@@ -64,7 +64,7 @@ pub struct BatchExecuteTransaction<'info> {
 }
 
 impl BatchExecuteTransaction<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         let Self {
             multisig,
             member,

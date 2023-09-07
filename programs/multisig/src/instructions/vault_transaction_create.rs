@@ -44,7 +44,7 @@ pub struct VaultTransactionCreate<'info> {
 }
 
 impl VaultTransactionCreate<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;
@@ -87,7 +87,6 @@ impl VaultTransactionCreate<'_> {
         let (_, vault_bump) = Pubkey::find_program_address(vault_seeds, ctx.program_id);
 
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
-            .into_iter()
             .map(|ephemeral_signer_index| {
                 let ephemeral_signer_seeds = &[
                     SEED_PREFIX,
@@ -146,7 +145,7 @@ pub struct TransactionMessage {
 }
 
 // Concise serialization schema for instructions that make up transaction.
-#[derive(AnchorDeserialize, Clone)]
+#[derive(AnchorDeserialize, Clone, Default)]
 pub struct CompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -157,7 +156,7 @@ pub struct CompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts in a single tx.
-#[derive(AnchorDeserialize, Clone)]
+#[derive(AnchorDeserialize, Clone, Default)]
 pub struct MessageAddressTableLookup {
     /// Address lookup table account key
     pub account_key: Pubkey,

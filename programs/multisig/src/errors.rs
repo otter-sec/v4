@@ -65,7 +65,7 @@ pub enum MultisigError {
 }
 
 impl From<MultisigError> for anchor_lang::prelude::Error {
-    fn from(value: MultisigError) -> Self {
+    fn from(_value: MultisigError) -> Self {
         todo!()
     }
 }

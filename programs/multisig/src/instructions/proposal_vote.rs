@@ -35,7 +35,7 @@ pub struct ProposalVote<'info> {
 }
 
 impl ProposalVote<'_> {
-    fn validate(&self, vote: Vote) -> Result<()> {
+    fn _validate(&self, vote: Vote) -> Result<()> {
         let Self {
             multisig,
             proposal,

@@ -61,7 +61,7 @@ pub struct MultisigConfig<'info> {
 }
 
 impl MultisigConfig<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         require_keys_eq!(
             self.config_authority.key(),
             self.multisig.config_authority,

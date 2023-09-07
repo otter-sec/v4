@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::TransactionMessage;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct BatchAddTransactionArgs {
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
@@ -70,7 +70,7 @@ pub struct BatchAddTransaction<'info> {
 }
 
 impl BatchAddTransaction<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         let Self {
             multisig,
             member,
@@ -111,7 +111,6 @@ impl BatchAddTransaction<'_> {
             TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
 
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
-            .into_iter()
             .map(|ephemeral_signer_index| {
                 let ephemeral_signer_seeds = &[
                     SEED_PREFIX,

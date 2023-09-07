@@ -39,7 +39,7 @@ pub struct BatchCreate<'info> {
 }
 
 impl BatchCreate<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;

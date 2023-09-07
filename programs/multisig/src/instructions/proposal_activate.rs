@@ -28,7 +28,7 @@ pub struct ProposalActivate<'info> {
 }
 
 impl ProposalActivate<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ConfigTransactionCreateArgs {
     pub actions: Vec<ConfigAction>,
     // pub memo: Option<String>,
@@ -39,7 +39,7 @@ pub struct ConfigTransactionCreate<'info> {
 }
 
 impl ConfigTransactionCreate<'_> {
-    fn validate(&self) -> Result<()> {
+    fn _validate(&self) -> Result<()> {
         // multisig
         require_keys_eq!(
             self.multisig.config_authority,

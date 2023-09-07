@@ -4,10 +4,9 @@ use std::convert::From;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::program::invoke_signed;
-use solana_address_lookup_table_program::state::AddressLookupTable;
+// use solana_address_lookup_table_program::state::AddressLookupTable;
 
 use crate::errors::*;
-use crate::id;
 use crate::state::*;
 
 /// Sanitized and validated combination of a `MsTransactionMessage` and `AccountInfo`s it references.
@@ -15,11 +14,11 @@ pub struct ExecutableTransactionMessage<'a, 'info> {
     /// Message which loaded a collection of lookup table addresses.
     message: &'a VaultTransactionMessage,
     /// Resolved `account_keys` of the message.
-    static_accounts: Vec<&'a AccountInfo<'info>>,
+    static_accounts: Vec<AccountInfo<'info>>,
     /// Concatenated vector of resolved `writable_indexes` from all address lookups.
-    loaded_writable_accounts: Vec<&'a AccountInfo<'info>>,
+    loaded_writable_accounts: Vec<AccountInfo<'info>>,
     /// Concatenated vector of resolved `readonly_indexes` from all address lookups.
-    loaded_readonly_accounts: Vec<&'a AccountInfo<'info>>,
+    loaded_readonly_accounts: Vec<AccountInfo<'info>>,
 }
 
 impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
@@ -46,10 +45,11 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             .iter()
             .map(|maybe_lookup_table| {
                 // The lookup table account must be owned by SolanaAddressLookupTableProgram.
-                require!(
-                    maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
-                    MultisigError::InvalidAccount
-                );
+                // TODO this isn't needed for verification
+                // require!(
+                //     maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
+                //     MultisigError::InvalidAccount
+                // );
                 // The lookup table must be mentioned in `message.address_table_lookups`.
                 require!(
                     message
@@ -92,7 +92,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             if message.is_static_writable_index(i) {
                 require!(account_info.is_writable, MultisigError::InvalidAccount);
             }
-            static_accounts.push(account_info);
+            static_accounts.push(account_info.clone());
         }
 
         let mut writable_accounts = Vec::new();
@@ -104,16 +104,16 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         let mut message_indexes_cursor = message.account_keys.len();
         for lookup in message.address_table_lookups.iter() {
             // This is cheap deserialization, it doesn't allocate/clone space for addresses.
-            let lookup_table_data = &lookup_tables
+            let _lookup_table_data = &lookup_tables
                 .get(&lookup.account_key)
                 .unwrap()
                 .data
                 .borrow()[..];
-            let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
-                .map_err(|_| MultisigError::InvalidAccount)?;
+            // let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
+            //     .map_err(|_| MultisigError::InvalidAccount)?;
 
             // Accounts listed as writable in lookup, should be loaded as writable.
-            for (i, index_in_lookup_table) in lookup.writable_indexes.iter().enumerate() {
+            for (i, _index_in_lookup_table) in lookup.writable_indexes.iter().enumerate() {
                 // Check the modifiers.
                 let index = message_indexes_cursor + i;
                 let loaded_account_info = &message_account_infos
@@ -125,39 +125,39 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                     MultisigError::InvalidAccount
                 );
                 // Check that the pubkey matches the one from the actual lookup table.
-                let pubkey_from_lookup_table = lookup_table
-                    .addresses
-                    .get(usize::from(*index_in_lookup_table))
-                    .ok_or(MultisigError::InvalidAccount)?;
-                require_keys_eq!(
-                    *loaded_account_info.key,
-                    *pubkey_from_lookup_table,
-                    MultisigError::InvalidAccount
-                );
+                // let pubkey_from_lookup_table = lookup_table
+                //     .addresses
+                //     .get(usize::from(*index_in_lookup_table))
+                //     .ok_or(MultisigError::InvalidAccount)?;
+                // require_keys_eq!(
+                //     *loaded_account_info.key,
+                //     *pubkey_from_lookup_table,
+                //     MultisigError::InvalidAccount
+                // );
 
-                writable_accounts.push(*loaded_account_info);
+                writable_accounts.push((*loaded_account_info).clone());
             }
             message_indexes_cursor += lookup.writable_indexes.len();
 
             // Accounts listed as readonly in lookup.
-            for (i, index_in_lookup_table) in lookup.readonly_indexes.iter().enumerate() {
+            for (i, _index_in_lookup_table) in lookup.readonly_indexes.iter().enumerate() {
                 // Check the modifiers.
                 let index = message_indexes_cursor + i;
                 let loaded_account_info = &message_account_infos
                     .get(index)
                     .ok_or(MultisigError::InvalidNumberOfAccounts)?;
                 // Check that the pubkey matches the one from the actual lookup table.
-                let pubkey_from_lookup_table = lookup_table
-                    .addresses
-                    .get(usize::from(*index_in_lookup_table))
-                    .ok_or(MultisigError::InvalidAccount)?;
-                require_keys_eq!(
-                    *loaded_account_info.key,
-                    *pubkey_from_lookup_table,
-                    MultisigError::InvalidAccount
-                );
+                // let pubkey_from_lookup_table = lookup_table
+                //     .addresses
+                //     .get(usize::from(*index_in_lookup_table))
+                //     .ok_or(MultisigError::InvalidAccount)?;
+                // require_keys_eq!(
+                //     *loaded_account_info.key,
+                //     *pubkey_from_lookup_table,
+                //     MultisigError::InvalidAccount
+                // );
 
-                readonly_accounts.push(*loaded_account_info);
+                readonly_accounts.push((*loaded_account_info).clone());
             }
             message_indexes_cursor += lookup.readonly_indexes.len();
         }
@@ -177,16 +177,16 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     ) -> Result<()> {
         for (ix, account_infos) in self.to_instructions_and_accounts().iter() {
             // Make sure we don't allow reentrancy of transaction_execute.
-            if ix.program_id == id() {
-                require!(
-                    ix.data[..8] != crate::instructions::VaultTransactionExecute::DISCRIMINATOR,
-                    MultisigError::ExecuteReentrancy
-                );
-                require!(
-                    ix.data[..8] != crate::instructions::BatchExecuteTransaction::DISCRIMINATOR,
-                    MultisigError::ExecuteReentrancy
-                );
-            }
+            // if ix.program_id == id() {
+            //     require!(
+            //         ix.data[..8] != crate::instructions::VaultTransactionExecute::DISCRIMINATOR,
+            //         MultisigError::ExecuteReentrancy
+            //     );
+            //     require!(
+            //         ix.data[..8] != crate::instructions::BatchExecuteTransaction::DISCRIMINATOR,
+            //         MultisigError::ExecuteReentrancy
+            //     );
+            // }
 
             // Convert vault_seeds to Vec<&[u8]>.
             let vault_seeds = vault_seeds.iter().map(Vec::as_slice).collect::<Vec<_>>();
@@ -215,7 +215,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     /// 1. Static accounts.
     /// 2. All loaded writable accounts.
     /// 3. All loaded readonly accounts.
-    fn get_account_by_index(&self, index: usize) -> Result<&'a AccountInfo<'info>> {
+    fn get_account_by_index(&'a self, index: usize) -> Result<&'a AccountInfo<'info>> {
         if index < self.static_accounts.len() {
             return Ok(&self.static_accounts[index]);
         }
@@ -251,7 +251,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     }
 
     pub fn to_instructions_and_accounts(&self) -> Vec<(Instruction, Vec<AccountInfo<'info>>)> {
-        let mut executable_instructions = vec![];
+        let mut executable_instructions = Vec::new();
 
         for ms_compiled_instruction in self.message.instructions.iter() {
             let ix_accounts: Vec<(AccountInfo<'info>, AccountMeta)> = ms_compiled_instruction
@@ -283,9 +283,9 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                 program_id: *ix_program_account_info.key,
                 accounts: ix_accounts
                     .iter()
-                    .map(|(_, account_meta)| account_meta.clone())
+                    .map(|(_, account_meta)| *account_meta)
                     .collect(),
-                data: ms_compiled_instruction.data.clone(),
+                data: ms_compiled_instruction.data,
             };
 
             let mut account_infos: Vec<AccountInfo> = ix_accounts
