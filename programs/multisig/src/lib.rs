@@ -55,6 +55,9 @@ pub mod multisig {
     }
 
     /// Set the multisig `config_authority`.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_set_config_authority(
         ctx: Context<MultisigConfig>,
         args: MultisigSetConfigAuthorityArgs,
