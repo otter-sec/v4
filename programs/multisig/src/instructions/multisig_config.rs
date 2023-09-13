@@ -75,7 +75,7 @@ impl MultisigConfig<'_> {
     ///
     /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn multisig_add_member(ctx: Context<Self>, args: MultisigAddMemberArgs) -> Result<()> {
         let MultisigAddMemberArgs { new_member, .. } = args;
 
@@ -116,7 +116,7 @@ impl MultisigConfig<'_> {
     ///
     /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn multisig_remove_member(
         ctx: Context<Self>,
         args: MultisigRemoveMemberArgs,
@@ -145,7 +145,7 @@ impl MultisigConfig<'_> {
 
     /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn multisig_change_threshold(
         ctx: Context<Self>,
         args: MultisigChangeThresholdArgs,
@@ -167,7 +167,7 @@ impl MultisigConfig<'_> {
     ///
     /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn multisig_set_time_lock(ctx: Context<Self>, args: MultisigSetTimeLockArgs) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
 
@@ -184,7 +184,7 @@ impl MultisigConfig<'_> {
     ///
     /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn multisig_set_config_authority(
         ctx: Context<Self>,
         args: MultisigSetConfigAuthorityArgs,
@@ -203,7 +203,7 @@ impl MultisigConfig<'_> {
     // /// Create a new spending limit for a vault.
     // /// NOTE: This instruction must be called only by the `config_authority` if one is set (Controlled Multisig).
     // ///       Uncontrolled Mustisigs should use `config_transaction_create` instead.
-    // #[access_control(ctx.accounts.validate(&args))]
+    // #[access_control(ctx.accounts._validate(&args))]
     // pub fn multisig_add_spending_limit(
     //     ctx: Context<Self>,
     //     args: MultisigAddSpendingLimitArgs,

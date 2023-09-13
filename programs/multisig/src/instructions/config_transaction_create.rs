@@ -62,7 +62,7 @@ impl ConfigTransactionCreate<'_> {
     }
 
     /// Create a new config transaction.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn config_transaction_create(
         ctx: Context<Self>,
         args: ConfigTransactionCreateArgs,

@@ -58,7 +58,7 @@ impl BatchCreate<'_> {
     }
 
     /// Create a new batch.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn batch_create(ctx: Context<Self>, args: BatchCreateArgs) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let creator = &mut ctx.accounts.creator;

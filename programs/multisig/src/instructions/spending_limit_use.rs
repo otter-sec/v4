@@ -142,7 +142,7 @@ impl SpendingLimitUse<'_> {
     }
 
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn spending_limit_use(ctx: Context<Self>, args: SpendingLimitUseArgs) -> Result<()> {
         let spending_limit = &mut ctx.accounts.spending_limit;
         let vault = &mut ctx.accounts.vault;

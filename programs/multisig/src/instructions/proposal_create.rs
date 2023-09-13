@@ -81,7 +81,7 @@ impl ProposalCreate<'_> {
     }
 
     /// Create a new multisig proposal.
-    #[access_control(ctx.accounts.validate(&args))]
+    #[access_control(ctx.accounts._validate(&args))]
     pub fn proposal_create(ctx: Context<Self>, args: ProposalCreateArgs) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 

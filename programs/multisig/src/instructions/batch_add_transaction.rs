@@ -100,7 +100,7 @@ impl BatchAddTransaction<'_> {
     }
 
     /// Add a transaction to the batch.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn batch_add_transaction(ctx: Context<Self>, args: BatchAddTransactionArgs) -> Result<()> {
         let batch = &mut ctx.accounts.batch;
         let transaction = &mut ctx.accounts.transaction;

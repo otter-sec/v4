@@ -63,7 +63,7 @@ impl VaultTransactionCreate<'_> {
     }
 
     /// Create a new vault transaction.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts._validate())]
     pub fn vault_transaction_create(
         ctx: Context<Self>,
         args: VaultTransactionCreateArgs,
