@@ -45,7 +45,7 @@ pub struct MultisigConfig<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,
@@ -61,7 +61,7 @@ pub struct MultisigConfig<'info> {
 }
 
 impl MultisigConfig<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         require_keys_eq!(
             self.config_authority.key(),
             self.multisig.config_authority,
@@ -92,6 +92,7 @@ impl MultisigConfig<'_> {
         let multisig = &mut ctx.accounts.multisig;
 
         // Check if we need to reallocate space.
+        #[verify_ignore]
         let reallocated = Multisig::realloc_if_needed(
             multisig.to_account_info(),
             multisig.members.len() + 1,
@@ -99,6 +100,7 @@ impl MultisigConfig<'_> {
             system_program.to_account_info(),
         )?;
 
+        #[verify_ignore]
         if reallocated {
             multisig.reload()?;
         }

@@ -19,8 +19,8 @@ kani = ["anchor-lang/kani", "anchor-spl/kani"]
 [dependencies]
 # anchor-lang = { version = "=0.27.0", features = ["allow-missing-optionals"] }
 # anchor-lang = { package = "onchor", git = "https://github.com/otter-sec/verify", branch = "anchor_spl" }
-anchor-lang = { package = "onchor", path = "/Users/kadir/c/otter/solana-verify/anchor" }
+anchor-lang = { package = "onchor", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor" }
 # anchor-spl = { version = "=0.27.0", features = ["token"] }
 # anchor-spl = { package = "onchor_spl", git = "https://github.com/otter-sec/verify", branch = "anchor_spl" }
-anchor-spl = { package = "onchor_spl", path = "/Users/kadir/c/otter/solana-verify/anchor_spl" }
+anchor-spl = { package = "onchor_spl", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor_spl" }
 # solana-address-lookup-table-program = "=1.14.16"

@@ -88,7 +88,7 @@ pub struct SpendingLimitUse<'info> {
 }
 
 impl SpendingLimitUse<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             member,

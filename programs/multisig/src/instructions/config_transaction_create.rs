@@ -39,7 +39,7 @@ pub struct ConfigTransactionCreate<'info> {
 }
 
 impl ConfigTransactionCreate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         // multisig
         require_keys_eq!(
             self.multisig.config_authority,

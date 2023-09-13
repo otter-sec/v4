@@ -41,7 +41,7 @@ pub struct MultisigCreate<'info> {
 }
 
 impl MultisigCreate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         Ok(())
     }
 

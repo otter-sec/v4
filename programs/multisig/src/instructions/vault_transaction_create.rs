@@ -44,7 +44,7 @@ pub struct VaultTransactionCreate<'info> {
 }
 
 impl VaultTransactionCreate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;

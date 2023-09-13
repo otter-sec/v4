@@ -28,6 +28,14 @@ pub mod multisig {
     }
 
     /// Add a new member to the multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() <= usize::from(u16::MAX-1)
+        && ctx.accounts.multisig.members.iter().all(|m| m.key != args.new_member.key)
+        && ctx.accounts.system_program.is_some()
+        && ctx.accounts.rent_payer.is_some()
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_member.permissions.mask < 8
+    )]
     pub fn multisig_add_member(
         ctx: Context<MultisigConfig>,
         args: MultisigAddMemberArgs,

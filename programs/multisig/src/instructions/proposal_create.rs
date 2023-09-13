@@ -41,7 +41,7 @@ pub struct ProposalCreate<'info> {
 }
 
 impl ProposalCreate<'_> {
-    fn _validate(&self, args: &ProposalCreateArgs) -> Result<()> {
+    fn validate(&self, args: &ProposalCreateArgs) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;
