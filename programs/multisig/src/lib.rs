@@ -44,6 +44,9 @@ pub mod multisig {
     }
 
     /// Set the `time_lock` config parameter for the multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_set_time_lock(
         ctx: Context<MultisigConfig>,
         args: MultisigSetTimeLockArgs,
