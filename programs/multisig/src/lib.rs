@@ -54,6 +54,29 @@ pub mod multisig {
     }
 
     /// Remove a member/key from the multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() > 1
+        && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Execute)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 1
+        } else {
+            true
+        }
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Initiate)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 1
+        } else {
+            true
+        }
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Vote)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > ctx.accounts.multisig.threshold as usize
+            && ctx.accounts.multisig.threshold > 1
+        } else {
+            true
+        }
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.multisig.is_member(args.old_member).is_some()
+        && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
+    )]
     pub fn multisig_remove_member(
         ctx: Context<MultisigConfig>,
         args: MultisigRemoveMemberArgs,
