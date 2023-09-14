@@ -70,6 +70,7 @@ pub mod multisig {
         !args.actions.is_empty()
         && ctx.accounts.multisig.config_authority == Pubkey::default()
         && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.multisig.transaction_index < u64::MAX
     )]
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
