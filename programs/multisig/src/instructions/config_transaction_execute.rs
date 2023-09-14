@@ -59,7 +59,7 @@ pub struct ConfigTransactionExecute<'info> {
 }
 
 impl<'info> ConfigTransactionExecute<'info> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,
@@ -100,7 +100,7 @@ impl<'info> ConfigTransactionExecute<'info> {
 
     /// Execute the multisig transaction.
     /// The transaction must be `Approved`.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn config_transaction_execute(ctx: Context<'_, '_, '_, 'info, Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let transaction = &mut ctx.accounts.transaction;

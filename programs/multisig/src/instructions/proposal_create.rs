@@ -41,7 +41,7 @@ pub struct ProposalCreate<'info> {
 }
 
 impl ProposalCreate<'_> {
-    fn _validate(&self, args: &ProposalCreateArgs) -> Result<()> {
+    fn validate(&self, args: &ProposalCreateArgs) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;
@@ -81,7 +81,7 @@ impl ProposalCreate<'_> {
     }
 
     /// Create a new multisig proposal.
-    #[access_control(ctx.accounts._validate(&args))]
+    #[access_control(ctx.accounts.validate(&args))]
     pub fn proposal_create(ctx: Context<Self>, args: ProposalCreateArgs) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 

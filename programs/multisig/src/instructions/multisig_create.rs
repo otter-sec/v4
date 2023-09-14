@@ -41,12 +41,12 @@ pub struct MultisigCreate<'info> {
 }
 
 impl MultisigCreate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         Ok(())
     }
 
     /// Creates a multisig.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn multisig_create(ctx: Context<Self>, args: MultisigCreateArgs) -> Result<()> {
         // Sort the members by pubkey.
         let mut members = args.members;

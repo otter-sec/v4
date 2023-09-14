@@ -64,7 +64,7 @@ pub struct BatchExecuteTransaction<'info> {
 }
 
 impl BatchExecuteTransaction<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             member,
@@ -103,7 +103,7 @@ impl BatchExecuteTransaction<'_> {
     }
 
     /// Execute a transaction from the batch.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn batch_execute_transaction(ctx: Context<BatchExecuteTransaction>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;

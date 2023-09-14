@@ -44,7 +44,7 @@ pub struct VaultTransactionCreate<'info> {
 }
 
 impl VaultTransactionCreate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig, creator, ..
         } = self;
@@ -63,7 +63,7 @@ impl VaultTransactionCreate<'_> {
     }
 
     /// Create a new vault transaction.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn vault_transaction_create(
         ctx: Context<Self>,
         args: VaultTransactionCreateArgs,

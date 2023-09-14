@@ -48,7 +48,7 @@ pub struct VaultTransactionExecute<'info> {
 }
 
 impl VaultTransactionExecute<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,
@@ -86,7 +86,7 @@ impl VaultTransactionExecute<'_> {
 
     /// Execute the multisig transaction.
     /// The transaction must be `Approved`.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn vault_transaction_execute(ctx: Context<Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;

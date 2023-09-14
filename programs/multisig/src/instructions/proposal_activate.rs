@@ -28,7 +28,7 @@ pub struct ProposalActivate<'info> {
 }
 
 impl ProposalActivate<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,
@@ -61,7 +61,7 @@ impl ProposalActivate<'_> {
     }
 
     /// Update status of a multisig proposal from `Draft` to `Active`.
-    #[access_control(ctx.accounts._validate())]
+    #[access_control(ctx.accounts.validate())]
     pub fn proposal_activate(ctx: Context<Self>) -> Result<()> {
         ctx.accounts.proposal.status = ProposalStatus::Active {
             timestamp: Clock::get()?.unix_timestamp,

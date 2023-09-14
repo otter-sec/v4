@@ -35,7 +35,7 @@ pub struct ProposalVote<'info> {
 }
 
 impl ProposalVote<'_> {
-    fn _validate(&self, vote: Vote) -> Result<()> {
+    fn validate(&self, vote: Vote) -> Result<()> {
         let Self {
             multisig,
             proposal,
@@ -80,7 +80,7 @@ impl ProposalVote<'_> {
 
     /// Approve a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
-    #[access_control(ctx.accounts._validate(Vote::Approve))]
+    #[access_control(ctx.accounts.validate(Vote::Approve))]
     pub fn proposal_approve(ctx: Context<Self>, _args: ProposalVoteArgs) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
@@ -93,7 +93,7 @@ impl ProposalVote<'_> {
 
     /// Reject a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
-    #[access_control(ctx.accounts._validate(Vote::Reject))]
+    #[access_control(ctx.accounts.validate(Vote::Reject))]
     pub fn proposal_reject(ctx: Context<Self>, _args: ProposalVoteArgs) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
@@ -108,7 +108,7 @@ impl ProposalVote<'_> {
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
-    #[access_control(ctx.accounts._validate(Vote::Cancel))]
+    #[access_control(ctx.accounts.validate(Vote::Cancel))]
     pub fn proposal_cancel(ctx: Context<Self>, _args: ProposalVoteArgs) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
