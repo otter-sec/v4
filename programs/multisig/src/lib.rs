@@ -66,6 +66,11 @@ pub mod multisig {
     }
 
     /// Create a new config transaction.
+    #[succeeds_if(
+        !args.actions.is_empty()
+        && ctx.accounts.multisig.config_authority == Pubkey::default()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
