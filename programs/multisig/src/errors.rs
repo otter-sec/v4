@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-// #[error_code]
+#[error_code]
 pub enum MultisigError {
     // #[msg("Found multiple members with the same pubkey")]
     DuplicateMember,

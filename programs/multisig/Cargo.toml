@@ -17,6 +17,6 @@ default = ["kani"]
 kani = ["anchor-lang/kani", "anchor-spl/kani"]
 
 [dependencies]
-anchor-lang = { package = "onchor", path = "/home/andreas/Documents/solana-fv/solana-verify/anchor" }
-anchor-spl = { package = "onchor_spl", path = "/home/andreas/Documents/solana-fv/solana-verify/anchor_spl" }
+anchor-lang = { package = "onchor", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor" }
+anchor-spl = { package = "onchor_spl", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor_spl" }
 # solana-address-lookup-table-program = "=1.14.16"
