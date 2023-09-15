@@ -48,7 +48,7 @@ pub struct VaultTransactionExecute<'info> {
 }
 
 impl VaultTransactionExecute<'_> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,

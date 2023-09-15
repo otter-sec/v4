@@ -59,7 +59,7 @@ pub struct ConfigTransactionExecute<'info> {
 }
 
 impl<'info> ConfigTransactionExecute<'info> {
-    fn _validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         let Self {
             multisig,
             proposal,

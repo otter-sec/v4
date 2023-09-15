@@ -4,7 +4,20 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
 #[account]
-#[invariant()]
+#[invariant(
+    !self.members.is_empty()
+    && self.members.len() <= usize::from(u16::MAX)
+    && self.threshold <= self.members.len() as u16
+    && self.threshold > 0
+    && !self.members.windows(2).any(|win| win[0].key == win[1].key)
+    && self.members.iter().all(|m| m.permissions.mask < 8)
+    && Self::num_proposers(&self.members) > 0
+    && Self::num_executors(&self.members) > 0
+    && Self::num_voters(&self.members) > 0
+    && usize::from(self.threshold) <= Self::num_voters(&self.members)
+    && self.stale_transaction_index <= self.transaction_index
+    && self.transaction_index < u64::MAX
+)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
