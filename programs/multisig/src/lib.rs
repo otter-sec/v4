@@ -161,6 +161,14 @@ pub mod multisig {
     }
 
     /// Create a new multisig proposal.
+    #[succeeds_if(
+        args.transaction_index <= ctx.accounts.multisig.transaction_index
+        && args.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && (
+            ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+                || ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Vote)
+        )
+    )]
     pub fn proposal_create(ctx: Context<ProposalCreate>, args: ProposalCreateArgs) -> Result<()> {
         ProposalCreate::proposal_create(ctx, args)
     }
