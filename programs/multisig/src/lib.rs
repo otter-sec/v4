@@ -174,6 +174,12 @@ pub mod multisig {
     }
 
     /// Update status of a multisig proposal from `Draft` to `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn proposal_activate(ctx: Context<ProposalActivate>) -> Result<()> {
         ProposalActivate::proposal_activate(ctx)
     }
