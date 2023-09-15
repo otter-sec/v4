@@ -212,6 +212,12 @@ pub mod multisig {
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.cancelled.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_cancel(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_cancel(ctx, args)
     }
