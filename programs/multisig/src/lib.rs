@@ -186,6 +186,13 @@ pub mod multisig {
 
     /// Approve a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.approved.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_approve(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_approve(ctx, args)
     }
