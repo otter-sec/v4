@@ -78,6 +78,7 @@ impl ConfigTransactionCreate<'_> {
         // Increment the transaction index.
         let transaction_index = multisig.transaction_index.checked_add(1).unwrap();
 
+        require!(transaction_index != u64::MAX, 15);
         // Initialize the transaction fields.
         transaction.multisig = multisig_key;
         transaction.creator = creator.key();

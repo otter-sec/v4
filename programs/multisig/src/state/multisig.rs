@@ -16,6 +16,7 @@ use anchor_lang::system_program;
     && Self::num_voters(&self.members) > 0
     && usize::from(self.threshold) <= Self::num_voters(&self.members)
     && self.stale_transaction_index <= self.transaction_index
+    && self.transaction_index < u64::MAX
 )]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
