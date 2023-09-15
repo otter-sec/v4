@@ -23,11 +23,29 @@ pub mod multisig {
     use super::*;
 
     /// Create a multisig.
+    #[succeeds_if(
+        args.members.len() <= usize::from(u16::MAX)
+        && args.members.windows(2).all(|win| win[0].key != win[1].key)
+        && args.members.iter().all(|m| m.permissions.mask < 8)
+        && args.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 0
+        && args.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 0
+        && args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > 0
+        && args.threshold > 0
+        && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+    )]
     pub fn multisig_create(ctx: Context<MultisigCreate>, args: MultisigCreateArgs) -> Result<()> {
         MultisigCreate::multisig_create(ctx, args)
     }
 
     /// Add a new member to the multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() <= usize::from(u16::MAX-1)
+        && ctx.accounts.multisig.members.iter().all(|m| m.key != args.new_member.key)
+        && ctx.accounts.system_program.is_some()
+        && ctx.accounts.rent_payer.is_some()
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_member.permissions.mask < 8
+    )]
     pub fn multisig_add_member(
         ctx: Context<MultisigConfig>,
         args: MultisigAddMemberArgs,
@@ -36,6 +54,29 @@ pub mod multisig {
     }
 
     /// Remove a member/key from the multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() > 1
+        && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Execute)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 1
+        } else {
+            true
+        }
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Initiate)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 1
+        } else {
+            true
+        }
+        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Vote)) {
+            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > ctx.accounts.multisig.threshold as usize
+            && ctx.accounts.multisig.threshold > 1
+        } else {
+            true
+        }
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.multisig.is_member(args.old_member).is_some()
+        && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
+    )]
     pub fn multisig_remove_member(
         ctx: Context<MultisigConfig>,
         args: MultisigRemoveMemberArgs,

@@ -50,6 +50,7 @@ impl MultisigCreate<'_> {
     pub fn multisig_create(ctx: Context<Self>, args: MultisigCreateArgs) -> Result<()> {
         // Sort the members by pubkey.
         let mut members = args.members;
+        #[verify_ignore]
         members.sort_by_key(|m| m.key);
 
         // Initialize the multisig.

@@ -63,9 +63,3 @@ pub enum MultisigError {
     // #[msg("Member has unknown permission")]
     UnknownPermission,
 }
-
-impl From<MultisigError> for anchor_lang::prelude::Error {
-    fn from(_value: MultisigError) -> Self {
-        todo!()
-    }
-}
