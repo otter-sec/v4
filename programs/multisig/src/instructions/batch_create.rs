@@ -68,6 +68,7 @@ impl BatchCreate<'_> {
 
         // Increment the transaction index.
         let index = multisig.transaction_index.checked_add(1).expect("overflow");
+        require!(index < u64::MAX, "overflow");
 
         let vault_seeds = &[
             SEED_PREFIX,

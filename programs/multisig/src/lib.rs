@@ -143,6 +143,11 @@ pub mod multisig {
     }
 
     /// Create a new batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.multisig.transaction_index < u64::MAX-1
+    )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
         BatchCreate::batch_create(ctx, args)
     }
