@@ -161,29 +161,63 @@ pub mod multisig {
     }
 
     /// Create a new multisig proposal.
+    #[succeeds_if(
+        args.transaction_index <= ctx.accounts.multisig.transaction_index
+        && args.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && (
+            ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+                || ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Vote)
+        )
+    )]
     pub fn proposal_create(ctx: Context<ProposalCreate>, args: ProposalCreateArgs) -> Result<()> {
         ProposalCreate::proposal_create(ctx, args)
     }
 
     /// Update status of a multisig proposal from `Draft` to `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn proposal_activate(ctx: Context<ProposalActivate>) -> Result<()> {
         ProposalActivate::proposal_activate(ctx)
     }
 
     /// Approve a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.approved.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_approve(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_approve(ctx, args)
     }
 
     /// Reject a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.rejected.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_reject(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_reject(ctx, args)
     }
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.cancelled.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_cancel(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_cancel(ctx, args)
     }
