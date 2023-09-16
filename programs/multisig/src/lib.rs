@@ -245,20 +245,23 @@ pub mod multisig {
                 && ctx.accounts.token_program.is_some()
             }
         )
-        // && (
-        //     if let Some(reset_period) = ctx.accounts.spending_limit.period.to_seconds() {
-        //         let now = Clock::get().unwrap().unix_timestamp;
-        //         if now > reset_period {
-        //             ctx.accounts.spending_limit.amount >= args.amount
-        //             && (now - reset_period).checked_mul(reset_period).is_some()
-        //             && ctx.accounts.spending_limit.last_reset.checked_add((now - reset_period).checked_mul(reset_period).unwrap()).is_some()
-        //         } else {
-        //             ctx.accounts.spending_limit.remaining_amount >= args.amount
-        //         }
-        //     } else {
-        //         true
-        //     }
-        // )
+        && (
+            if let Some(reset_period) = ctx.accounts.spending_limit.period.to_seconds() {
+                let now = Clock::get()?.unix_timestamp;
+                now.checked_sub(ctx.accounts.spending_limit.last_reset).is_some()
+                && (
+                    if now.checked_sub(ctx.accounts.spending_limit.last_reset).unwrap() > reset_period {
+                        ctx.accounts.spending_limit.amount >= args.amount
+                        && (now - reset_period).checked_mul(reset_period).is_some()
+                        && ctx.accounts.spending_limit.last_reset.checked_add((now - reset_period).checked_mul(reset_period).unwrap()).is_some()
+                    } else {
+                        ctx.accounts.spending_limit.remaining_amount >= args.amount
+                    }
+                )
+            } else {
+                true
+            }
+        )
     )]
     pub fn spending_limit_use(
         ctx: Context<SpendingLimitUse>,
