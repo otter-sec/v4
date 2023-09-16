@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 #[invariant(
     !self.members.is_empty()
     && !self.members.windows(2).any(|win| win[0] == win[1])
+    && self.last_reset >= 0
+    && self.remaining_amount <= self.amount
 )]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
