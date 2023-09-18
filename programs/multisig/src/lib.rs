@@ -219,6 +219,7 @@ pub mod multisig {
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.actions.len() <= 3);
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }
 
