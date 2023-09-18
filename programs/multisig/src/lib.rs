@@ -117,6 +117,7 @@ pub mod multisig {
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX);
         ConfigTransactionCreate::config_transaction_create(ctx, args)
     }
 
