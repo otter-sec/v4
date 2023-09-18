@@ -80,6 +80,8 @@ impl<'info> ConfigTransactionExecute<'info> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                // let now = Clock::get()?.unix_timestamp;
+                // kani::assume(now - timestamp >= i64::from(multisig.time_lock));
                 require!(
                     Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
