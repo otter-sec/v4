@@ -251,6 +251,7 @@ pub mod multisig {
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 }

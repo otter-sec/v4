@@ -183,9 +183,6 @@ impl SpendingLimitUse<'_> {
         // Update `spending_limit.remaining_amount`.
         // This will also check if `amount` doesn't exceed `spending_limit.remaining_amount`.
 
-        // NOTE: Ensure no overflow for verifiaction
-        kani::assume(spending_limit.remaining_amount >= args.amount);
-
         spending_limit.remaining_amount = spending_limit
             .remaining_amount
             .checked_sub(args.amount)
