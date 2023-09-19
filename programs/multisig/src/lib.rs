@@ -130,10 +130,16 @@ pub mod multisig {
     }
 
     /// Create a new vault transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
+        kani::assume(args.ephemeral_signers <= 10);
         VaultTransactionCreate::vault_transaction_create(ctx, args)
     }
 
