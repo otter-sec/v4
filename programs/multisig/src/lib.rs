@@ -144,15 +144,28 @@ pub mod multisig {
     }
 
     /// Create a new batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
         BatchCreate::batch_create(ctx, args)
     }
 
     /// Add a transaction to the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.batch.size >= ctx.accounts.batch.executed_transaction_index
+     )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.batch.size < u32::MAX);
+        kani::assume(args.ephemeral_signers <= 10);
         BatchAddTransaction::batch_add_transaction(ctx, args)
     }
 
