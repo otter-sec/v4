@@ -237,10 +237,35 @@ pub mod multisig {
     }
 
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.spending_limit.members.contains(&ctx.accounts.member.key())
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+        && args.amount <= ctx.accounts.spending_limit.amount
+        && (
+            ctx.accounts.spending_limit.destinations.is_empty()
+            || ctx.accounts.spending_limit.destinations.contains(&ctx.accounts.destination.key())
+        )
+        && (
+            if ctx.accounts.spending_limit.mint == Pubkey::default() {
+                ctx.accounts.mint.is_none()
+                && ctx.accounts.system_program.is_some()
+                && args.decimals == 9
+                && ctx.accounts.vault.lamports() >= args.amount
+            } else {
+                ctx.accounts.mint.is_some()
+                && ctx.accounts.spending_limit.mint == ctx.accounts.mint.as_ref().unwrap().key()
+                && ctx.accounts.vault_token_account.is_some()
+                && ctx.accounts.destination_token_account.is_some()
+                && ctx.accounts.token_program.is_some()
+            }
+        )
+    )]
     pub fn spending_limit_use(
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 }
