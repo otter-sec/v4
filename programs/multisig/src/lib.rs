@@ -145,7 +145,17 @@ pub mod multisig {
 
     /// Execute a vault transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()        
+    )]
     pub fn vault_transaction_execute(ctx: Context<VaultTransactionExecute>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 10);
+        kani::assume(ctx.remaining_accounts.len() <= 10);
         VaultTransactionExecute::vault_transaction_execute(ctx)
     }
 
