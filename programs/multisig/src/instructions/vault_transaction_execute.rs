@@ -69,8 +69,11 @@ impl VaultTransactionExecute<'_> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                let now = Clock::get()?.unix_timestamp;
+                kani::assume(now > timestamp);
+                kani::assume(timestamp > 0);
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
