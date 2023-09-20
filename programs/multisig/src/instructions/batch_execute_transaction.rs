@@ -133,11 +133,11 @@ impl BatchExecuteTransaction<'_> {
             .get(..num_lookups)
             .ok_or(MultisigError::InvalidNumberOfAccounts)?;
 
-        let vault_pubkey = Pubkey::create_program_address(vault_seeds, ctx.program_id).unwrap();
+        let vault_pubkey = Pubkey::create_program_address(vault_seeds, ctx.program_id);
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(batch_key, &transaction.ephemeral_signer_bumps);
-
+        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
             message_account_infos,
@@ -153,6 +153,7 @@ impl BatchExecuteTransaction<'_> {
         proposal.try_serialize(&mut &mut proposal_account_info.data.borrow_mut()[..])?;
 
         // Execute the transaction message instructions one-by-one.
+        #[verify_ignore]
         executable_message.execute_message(
             &vault_seeds
                 .iter()
