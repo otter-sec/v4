@@ -186,7 +186,19 @@ pub mod multisig {
     }
 
     /// Execute a transaction from the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()
+        && ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size
+    )]
     pub fn batch_execute_transaction(ctx: Context<BatchExecuteTransaction>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 5);
+        kani::assume(ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size);
         BatchExecuteTransaction::batch_execute_transaction(ctx)
     }
 
