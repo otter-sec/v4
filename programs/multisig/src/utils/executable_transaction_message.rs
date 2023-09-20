@@ -3,7 +3,7 @@ use std::convert::From;
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
-use anchor_lang::solana_program::program::invoke_signed;
+// use anchor_lang::solana_program::program::invoke_signed;
 // use solana_address_lookup_table_program::state::AddressLookupTable;
 
 use crate::errors::*;
@@ -205,7 +205,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             // Add the vault seeds.
             signer_seeds.push(&vault_seeds);
 
-            invoke_signed(ix, account_infos, &signer_seeds)?;
+            // invoke_signed(ix, account_infos, &signer_seeds)?;
         }
 
         Ok(())

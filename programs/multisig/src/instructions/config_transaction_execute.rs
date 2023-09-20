@@ -59,6 +59,7 @@ pub struct ConfigTransactionExecute<'info> {
 }
 
 impl<'info> ConfigTransactionExecute<'info> {
+    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -78,12 +79,12 @@ impl<'info> ConfigTransactionExecute<'info> {
         );
 
         // proposal
+        #[verify_ignore]
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
-                // let now = Clock::get()?.unix_timestamp;
-                // kani::assume(now - timestamp >= i64::from(multisig.time_lock));
+                let now = Clock::get()?.unix_timestamp;
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    now - timestamp >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
@@ -105,6 +106,7 @@ impl<'info> ConfigTransactionExecute<'info> {
     #[access_control(ctx.accounts.validate())]
     pub fn config_transaction_execute(ctx: Context<'_, '_, '_, 'info, Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
+        kani::assume(multisig.members.len() <= 10);
         let transaction = &mut ctx.accounts.transaction;
         let proposal = &mut ctx.accounts.proposal;
 
@@ -113,6 +115,7 @@ impl<'info> ConfigTransactionExecute<'info> {
         // Check applying the config actions will require reallocation of space for the multisig account.
         let new_members_length =
             members_length_after_actions(multisig.members.len(), &transaction.actions);
+
         if new_members_length > multisig.members.len() {
             let rent_payer = &ctx
                 .accounts
@@ -221,7 +224,8 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
-                    members.sort();
+                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                    // members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
