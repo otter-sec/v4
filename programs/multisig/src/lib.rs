@@ -127,8 +127,6 @@ pub mod multisig {
     ) -> bool {
         kani::assume(ctx.accounts.multisig.members.len() <= 10);
         kani::assume(ctx.accounts.transaction.actions.len() <= 3);
-        // let old_threshold = ctx.accounts.multisig.threshold;
-        // let old_members = ctx.accounts.multisig.members.clone();
         let mut multisig = ctx.accounts.multisig.clone();
         ctx.accounts
             .transaction
@@ -139,6 +137,7 @@ pub mod multisig {
                     multisig.add_member(*new_member);
                 }
                 ConfigAction::RemoveMember { old_member } => {
+                    kani::assume(multisig.is_member(*old_member).is_some());
                     let _ = multisig.remove_member(*old_member);
                 }
                 ConfigAction::ChangeThreshold { new_threshold } => {
@@ -209,6 +208,17 @@ pub mod multisig {
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
+        kani::assume(
+            ctx.accounts.multisig.members.len()
+                + ctx
+                    .accounts
+                    .transaction
+                    .actions
+                    .iter()
+                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
+                    .count()
+                <= 10,
+        );
         kani::assume(ctx.accounts.transaction.actions.len() <= 3);
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }

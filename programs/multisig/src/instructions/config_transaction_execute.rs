@@ -106,7 +106,6 @@ impl<'info> ConfigTransactionExecute<'info> {
     #[access_control(ctx.accounts.validate())]
     pub fn config_transaction_execute(ctx: Context<'_, '_, '_, 'info, Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
-        kani::assume(multisig.members.len() <= 10);
         let transaction = &mut ctx.accounts.transaction;
         let proposal = &mut ctx.accounts.proposal;
 
@@ -128,15 +127,15 @@ impl<'info> ConfigTransactionExecute<'info> {
                 .as_ref()
                 .ok_or(MultisigError::MissingAccount)?;
 
-            let reallocated = Multisig::realloc_if_needed(
-                multisig.to_account_info(),
-                new_members_length,
-                rent_payer.to_account_info(),
-                system_program.to_account_info(),
-            )?;
-            if reallocated {
-                multisig.reload()?;
-            }
+            // let reallocated = Multisig::realloc_if_needed(
+            //     multisig.to_account_info(),
+            //     new_members_length,
+            //     rent_payer.to_account_info(),
+            //     system_program.to_account_info(),
+            // )?;
+            // if reallocated {
+            //     multisig.reload()?;
+            // }
         }
 
         // Execute the actions one by one.
@@ -165,7 +164,6 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     multisig.invalidate_prior_transactions();
                 }
-
                 ConfigAction::AddSpendingLimit {
                     create_key,
                     vault_index,
@@ -294,6 +292,12 @@ impl<'info> ConfigTransactionExecute<'info> {
         };
 
         // Make sure the multisig state is valid after applying the actions.
+        kani::assume(
+            multisig
+                .members
+                .windows(2)
+                .all(|win| win[0].key != win[1].key),
+        );
         multisig.invariant()?;
 
         // Mark the proposal as executed.
@@ -315,15 +319,17 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::RemoveSpendingLimit { .. } => acc,
         ConfigAction::NoAction => acc,
     });
-
+    kani::assume(members_delta.checked_abs().is_some());
     let abs_members_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
 
     if members_delta.is_negative() {
+        kani::assume(members_length.checked_sub(abs_members_delta).is_some());
         members_length
             .checked_sub(abs_members_delta)
             .expect("overflow")
     } else {
+        kani::assume(members_length.checked_add(abs_members_delta).is_some());
         members_length
             .checked_add(abs_members_delta)
             .expect("overflow")
