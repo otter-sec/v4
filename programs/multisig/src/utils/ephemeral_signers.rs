@@ -29,8 +29,7 @@ pub fn derive_ephemeral_signers(
                         .collect::<Vec<&[u8]>>()
                         .as_slice(),
                     &crate::id(),
-                )
-                .unwrap(),
+                ),
                 seeds,
             )
         })
