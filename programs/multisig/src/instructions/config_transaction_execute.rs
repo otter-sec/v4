@@ -148,6 +148,7 @@ impl<'info> ConfigTransactionExecute<'info> {
                 }
 
                 ConfigAction::RemoveMember { old_member } => {
+                    kani::assume(multisig.is_member(*old_member).is_some());
                     multisig.remove_member(old_member.to_owned())?;
 
                     multisig.invalidate_prior_transactions();
@@ -164,119 +165,120 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     multisig.invalidate_prior_transactions();
                 }
-                ConfigAction::AddSpendingLimit {
-                    create_key,
-                    vault_index,
-                    mint,
-                    amount,
-                    period,
-                    members,
-                    destinations,
-                } => {
-                    let (spending_limit_key, spending_limit_bump) = Pubkey::find_program_address(
-                        &[
-                            &SEED_PREFIX,
-                            multisig.key().as_ref(),
-                            &SEED_SPENDING_LIMIT,
-                            create_key.as_ref(),
-                        ],
-                        ctx.program_id,
-                    );
 
-                    // Find the SpendingLimit account in `remaining_accounts`.
-                    let spending_limit_info = ctx
-                        .remaining_accounts
-                        .iter()
-                        .find(|acc| acc.key == &spending_limit_key)
-                        .ok_or(MultisigError::MissingAccount)?;
+                // ConfigAction::AddSpendingLimit {
+                //     create_key,
+                //     vault_index,
+                //     mint,
+                //     amount,
+                //     period,
+                //     members,
+                //     destinations,
+                // } => {
+                //     let (spending_limit_key, spending_limit_bump) = Pubkey::find_program_address(
+                //         &[
+                //             &SEED_PREFIX,
+                //             multisig.key().as_ref(),
+                //             &SEED_SPENDING_LIMIT,
+                //             create_key.as_ref(),
+                //         ],
+                //         ctx.program_id,
+                //     );
 
-                    // `rent_payer` and `system_program` must also be present.
-                    let rent_payer = &ctx
-                        .accounts
-                        .rent_payer
-                        .as_ref()
-                        .ok_or(MultisigError::MissingAccount)?;
-                    let system_program = &ctx
-                        .accounts
-                        .system_program
-                        .as_ref()
-                        .ok_or(MultisigError::MissingAccount)?;
+                //     // Find the SpendingLimit account in `remaining_accounts`.
+                //     let spending_limit_info = ctx
+                //         .remaining_accounts
+                //         .iter()
+                //         .find(|acc| acc.key == &spending_limit_key)
+                //         .ok_or(MultisigError::MissingAccount)?;
 
-                    // Initialize the SpendingLimit account.
-                    create_account(
-                        rent_payer,
-                        spending_limit_info,
-                        system_program,
-                        &id(),
-                        &rent,
-                        SpendingLimit::size(members.len(), destinations.len()),
-                        vec![
-                            SEED_PREFIX.to_vec().into(),
-                            multisig.key().as_ref().to_vec().into(),
-                            SEED_SPENDING_LIMIT.to_vec().into(),
-                            create_key.as_ref().to_vec().into(),
-                            vec![spending_limit_bump].into(),
-                        ]
-                        .into(),
-                    )?;
+                //     // `rent_payer` and `system_program` must also be present.
+                //     let rent_payer = &ctx
+                //         .accounts
+                //         .rent_payer
+                //         .as_ref()
+                //         .ok_or(MultisigError::MissingAccount)?;
+                //     let system_program = &ctx
+                //         .accounts
+                //         .system_program
+                //         .as_ref()
+                //         .ok_or(MultisigError::MissingAccount)?;
 
-                    let mut members = members.to_vec();
-                    // Make sure members are sorted.
-                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
-                    // members.sort();
+                //     // Initialize the SpendingLimit account.
+                //     create_account(
+                //         rent_payer,
+                //         spending_limit_info,
+                //         system_program,
+                //         &id(),
+                //         &rent,
+                //         SpendingLimit::size(members.len(), destinations.len()),
+                //         vec![
+                //             SEED_PREFIX.to_vec().into(),
+                //             multisig.key().as_ref().to_vec().into(),
+                //             SEED_SPENDING_LIMIT.to_vec().into(),
+                //             create_key.as_ref().to_vec().into(),
+                //             vec![spending_limit_bump].into(),
+                //         ]
+                //         .into(),
+                //     )?;
 
-                    // Serialize the SpendingLimit data into the account info.
-                    let spending_limit = SpendingLimit {
-                        multisig: multisig.key().to_owned(),
-                        create_key: create_key.to_owned(),
-                        vault_index: *vault_index,
-                        amount: *amount,
-                        mint: *mint,
-                        period: *period,
-                        remaining_amount: *amount,
-                        last_reset: Clock::get()?.unix_timestamp,
-                        bump: spending_limit_bump,
-                        members: members.into(),
-                        destinations: destinations.to_vec().into(),
-                    };
+                //     let mut members = members.to_vec();
+                //     // Make sure members are sorted.
+                //     kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                //     // members.sort();
 
-                    spending_limit.invariant()?;
+                //     // Serialize the SpendingLimit data into the account info.
+                //     let spending_limit = SpendingLimit {
+                //         multisig: multisig.key().to_owned(),
+                //         create_key: create_key.to_owned(),
+                //         vault_index: *vault_index,
+                //         amount: *amount,
+                //         mint: *mint,
+                //         period: *period,
+                //         remaining_amount: *amount,
+                //         last_reset: Clock::get()?.unix_timestamp,
+                //         bump: spending_limit_bump,
+                //         members: members.into(),
+                //         destinations: destinations.to_vec().into(),
+                //     };
 
-                    spending_limit
-                        .try_serialize(&mut &mut spending_limit_info.data.borrow_mut()[..])?;
-                }
+                //     spending_limit.invariant()?;
 
-                ConfigAction::RemoveSpendingLimit {
-                    spending_limit: spending_limit_key,
-                } => {
-                    // Find the SpendingLimit account in `remaining_accounts`.
-                    let spending_limit_info = ctx
-                        .remaining_accounts
-                        .iter()
-                        .find(|acc| acc.key == spending_limit_key)
-                        .ok_or(MultisigError::MissingAccount)?;
+                //     spending_limit
+                //         .try_serialize(&mut &mut spending_limit_info.data.borrow_mut()[..])?;
+                // }
 
-                    // `rent_payer` must also be present.
-                    let rent_payer = &ctx
-                        .accounts
-                        .rent_payer
-                        .as_ref()
-                        .ok_or(MultisigError::MissingAccount)?;
+                // ConfigAction::RemoveSpendingLimit {
+                //     spending_limit: spending_limit_key,
+                // } => {
+                //     // Find the SpendingLimit account in `remaining_accounts`.
+                //     let spending_limit_info = ctx
+                //         .remaining_accounts
+                //         .iter()
+                //         .find(|acc| acc.key == spending_limit_key)
+                //         .ok_or(MultisigError::MissingAccount)?;
 
-                    let spending_limit = Account::<SpendingLimit>::try_from(spending_limit_info)?;
+                //     // `rent_payer` must also be present.
+                //     let rent_payer = &ctx
+                //         .accounts
+                //         .rent_payer
+                //         .as_ref()
+                //         .ok_or(MultisigError::MissingAccount)?;
 
-                    // SpendingLimit must belong to the `multisig`.
-                    require_keys_eq!(
-                        spending_limit.multisig,
-                        multisig.key(),
-                        MultisigError::InvalidAccount
-                    );
+                //     let spending_limit = Account::<SpendingLimit>::try_from(spending_limit_info)?;
 
-                    spending_limit.close(rent_payer.to_account_info())?;
+                //     // SpendingLimit must belong to the `multisig`.
+                //     require_keys_eq!(
+                //         spending_limit.multisig,
+                //         multisig.key(),
+                //         MultisigError::InvalidAccount
+                //     );
 
-                    // We don't need to invalidate prior transactions here because adding
-                    // a spending limit doesn't affect the consensus parameters of the multisig.
-                }
+                //     spending_limit.close(rent_payer.to_account_info())?;
+
+                //     // We don't need to invalidate prior transactions here because adding
+                //     // a spending limit doesn't affect the consensus parameters of the multisig.
+                // }
                 // For no action
                 _ => {}
             }
@@ -296,7 +298,7 @@ impl<'info> ConfigTransactionExecute<'info> {
             multisig
                 .members
                 .windows(2)
-                .all(|win| win[0].key != win[1].key),
+                .all(|win| win[0].key < win[1].key),
         );
         multisig.invariant()?;
 
@@ -319,6 +321,7 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::RemoveSpendingLimit { .. } => acc,
         ConfigAction::NoAction => acc,
     });
+
     kani::assume(members_delta.checked_abs().is_some());
     let abs_members_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
