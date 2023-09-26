@@ -27,9 +27,8 @@ pub mod multisig {
         args.members.len() <= usize::from(u16::MAX)
         && args.members.windows(2).all(|win| win[0].key != win[1].key)
         && args.members.iter().all(|m| m.permissions.mask < 8)
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 0
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 0
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > 0
+        && args.members.iter().any(|m| m.permissions.has(Permission::Initiate))
+        && args.members.iter().any(|m| m.permissions.has(Permission::Execute))
         && args.threshold > 0
         && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
     )]
@@ -57,22 +56,10 @@ pub mod multisig {
     #[succeeds_if(
         ctx.accounts.multisig.members.len() > 1
         && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Execute)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 1
-        } else {
-            true
-        }
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Initiate)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 1
-        } else {
-            true
-        }
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Vote)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > ctx.accounts.multisig.threshold as usize
-            && ctx.accounts.multisig.threshold > 1
-        } else {
-            true
-        }
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Execute))
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Initiate))
+        && ctx.accounts.multisig.members.iter().filter(|m| m.key != args.old_member && m.permissions.has(Permission::Vote)).count() 
+            >= ctx.accounts.multisig.threshold as usize
         && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
         && ctx.accounts.multisig.is_member(args.old_member).is_some()
         && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
@@ -131,8 +118,7 @@ pub mod multisig {
 
     /// Create a new vault transaction.
     #[succeeds_if(
-        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
-        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
     )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
@@ -161,8 +147,7 @@ pub mod multisig {
 
     /// Create a new batch.
     #[succeeds_if(
-        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
-        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
     )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
         kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
@@ -171,8 +156,7 @@ pub mod multisig {
 
     /// Add a transaction to the batch.
     #[succeeds_if(
-        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
-        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
         && ctx.accounts.batch.size >= ctx.accounts.batch.executed_transaction_index
      )]
