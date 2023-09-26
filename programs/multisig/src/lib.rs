@@ -125,17 +125,6 @@ pub mod multisig {
     pub fn confix_tx_execute_validation_helper<'info>(
         ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
-        kani::assume(
-            ctx.accounts.multisig.members.len()
-                + ctx
-                    .accounts
-                    .transaction
-                    .actions
-                    .iter()
-                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
-                    .count()
-                <= 10,
-        );
         let mut threshold = ctx.accounts.multisig.threshold;
         let members_after = ctx.accounts.transaction.actions.iter().fold(
             Some(ctx.accounts.multisig.members),
@@ -156,6 +145,60 @@ pub mod multisig {
                     ConfigAction::ChangeThreshold { new_threshold } => {
                         threshold = *new_threshold;
                         Some(members)
+                    }
+                    ConfigAction::AddSpendingLimit {
+                        create_key: _,
+                        vault_index: _,
+                        mint: _,
+                        amount: _,
+                        period: _,
+                        members: spending_limit_members,
+                        destinations: _,
+                    } => {
+                        kani::assume(spending_limit_members.len() <= 2);
+                        if !spending_limit_members.is_empty()
+                            && !spending_limit_members
+                                .windows(2)
+                                .any(|win| win[0] == win[1])
+                            && ctx.accounts.system_program.is_some()
+                            && ctx.accounts.rent_payer.is_some()
+                        {
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::RemoveSpendingLimit {
+                        spending_limit: spending_limit_key,
+                    } => {
+                        if ctx
+                            .remaining_accounts
+                            .iter()
+                            .any(|acc| acc.key == spending_limit_key)
+                            && ctx.accounts.rent_payer.is_some()
+                            && Account::<SpendingLimit>::try_from(
+                                ctx.remaining_accounts
+                                    .iter()
+                                    .find(|acc| acc.key == spending_limit_key)
+                                    .as_ref()
+                                    .unwrap(),
+                            )
+                            .is_ok()
+                            && Account::<SpendingLimit>::try_from(
+                                ctx.remaining_accounts
+                                    .iter()
+                                    .find(|acc| acc.key == spending_limit_key)
+                                    .as_ref()
+                                    .unwrap(),
+                            )
+                            .unwrap()
+                            .multisig
+                                == ctx.accounts.multisig.key()
+                        {
+                            Some(members)
+                        } else {
+                            None
+                        }
                     }
                     _ => Some(members),
                 },
@@ -191,9 +234,9 @@ pub mod multisig {
         };
 
         if are_members_after_ok {
-            Err(Error::AccountDidNotSerialize)
-        } else {
             Ok(())
+        } else {
+            Err(Error::AccountDidNotSerialize)
         }
     }
 
@@ -206,26 +249,6 @@ pub mod multisig {
         && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
         && multisig::confix_tx_execute_validation_helper(&ctx).is_ok()
-        // && ctx.accounts.transaction.actions.iter().fold(true, |acc, action| match action {
-        //     ConfigAction::AddSpendingLimit {
-        //         create_key: _,
-        //         vault_index: _,
-        //         mint: _,
-        //         amount: _,
-        //         period: _,
-        //         members,
-        //         destinations: _,
-        //     } => acc && !members.is_empty() && !members.windows(2).any(|win| win[0] == win[1]) && ctx.accounts.system_program.is_some() && ctx.accounts.rent_payer.is_some(),
-        //     ConfigAction::RemoveSpendingLimit {
-        //         spending_limit: spending_limit_key,
-        //     } => {
-        //         acc
-        //         && ctx.remaining_accounts.iter().any(|acc| acc.key == spending_limit_key)
-        //         && ctx.accounts.rent_payer.is_some()
-        //         && Account::<SpendingLimit>::try_from(ctx.remaining_accounts.iter().find(|acc| acc.key == spending_limit_key).as_ref().unwrap()).is_ok()
-        //     },
-        //     _ => acc,
-        // })
     )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
@@ -242,6 +265,8 @@ pub mod multisig {
                 <= 10,
         );
         kani::assume(ctx.accounts.transaction.actions.len() <= 3);
+        kani::assume(ctx.accounts.multisig.members.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 3);
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }
 
