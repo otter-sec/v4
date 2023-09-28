@@ -186,31 +186,21 @@ pub mod multisig {
                     ConfigAction::RemoveSpendingLimit {
                         spending_limit: spending_limit_key,
                     } => {
-                        if ctx
+                        let spending_limit_account = ctx
                             .remaining_accounts
                             .iter()
-                            .any(|acc| acc.key == spending_limit_key)
-                            && ctx.accounts.rent_payer.is_some()
-                            && Account::<SpendingLimit>::try_from(
-                                ctx.remaining_accounts
-                                    .iter()
-                                    .find(|acc| acc.key == spending_limit_key)
-                                    .as_ref()
-                                    .unwrap(),
-                            )
-                            .is_ok()
-                            && Account::<SpendingLimit>::try_from(
-                                ctx.remaining_accounts
-                                    .iter()
-                                    .find(|acc| acc.key == spending_limit_key)
-                                    .as_ref()
-                                    .unwrap(),
-                            )
-                            .unwrap()
-                            .multisig
-                                == ctx.accounts.multisig.key()
-                        {
-                            Some(members)
+                            .find(|acc| acc.key == spending_limit_key);
+                        if let Some(account) = spending_limit_account {
+                            if ctx.accounts.rent_payer.is_some()
+                                && Account::<SpendingLimit>::try_from(account)
+                                    .map_or(false, |acc| {
+                                        acc.multisig == ctx.accounts.multisig.key()
+                                    })
+                            {
+                                Some(members)
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
