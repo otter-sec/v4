@@ -107,7 +107,8 @@ impl Multisig {
         AccountInfo::realloc(&multisig, new_size, false)?;
 
         // If more lamports are needed, transfer them to the account.
-        let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        // let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        let rent_exempt_lamports = kani::any::<u64>().max(1);
         let top_up_lamports =
             rent_exempt_lamports.saturating_sub(multisig.to_account_info().lamports());
 
