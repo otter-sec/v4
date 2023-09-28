@@ -92,7 +92,7 @@ impl MultisigConfig<'_> {
         let multisig = &mut ctx.accounts.multisig;
 
         // Check if we need to reallocate space.
-        #[verify_ignore]
+        // #[verify_ignore]
         let reallocated = Multisig::realloc_if_needed(
             multisig.to_account_info(),
             multisig.members.len() + 1,
@@ -100,7 +100,7 @@ impl MultisigConfig<'_> {
             system_program.to_account_info(),
         )?;
 
-        #[verify_ignore]
+        // #[verify_ignore]
         if reallocated {
             multisig.reload()?;
         }

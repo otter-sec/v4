@@ -27,9 +27,8 @@ pub mod multisig {
         args.members.len() <= usize::from(u16::MAX)
         && args.members.windows(2).all(|win| win[0].key != win[1].key)
         && args.members.iter().all(|m| m.permissions.mask < 8)
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 0
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 0
-        && args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > 0
+        && args.members.iter().any(|m| m.permissions.has(Permission::Initiate))
+        && args.members.iter().any(|m| m.permissions.has(Permission::Execute))
         && args.threshold > 0
         && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
     )]
@@ -57,22 +56,10 @@ pub mod multisig {
     #[succeeds_if(
         ctx.accounts.multisig.members.len() > 1
         && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Execute)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Execute)).count() > 1
-        } else {
-            true
-        }
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Initiate)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Initiate)).count() > 1
-        } else {
-            true
-        }
-        && if ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member && m.permissions.has(Permission::Vote)) {
-            ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count() > ctx.accounts.multisig.threshold as usize
-            && ctx.accounts.multisig.threshold > 1
-        } else {
-            true
-        }
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Execute))
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Initiate))
+        && ctx.accounts.multisig.members.iter().filter(|m| m.key != args.old_member && m.permissions.has(Permission::Vote)).count() 
+            >= ctx.accounts.multisig.threshold as usize
         && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
         && ctx.accounts.multisig.is_member(args.old_member).is_some()
         && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
@@ -262,34 +249,72 @@ pub mod multisig {
     }
 
     /// Create a new vault transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
+        kani::assume(args.ephemeral_signers <= 10);
         VaultTransactionCreate::vault_transaction_create(ctx, args)
     }
 
     /// Execute a vault transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()        
+    )]
     pub fn vault_transaction_execute(ctx: Context<VaultTransactionExecute>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 10);
+        kani::assume(ctx.remaining_accounts.len() <= 10);
         VaultTransactionExecute::vault_transaction_execute(ctx)
     }
 
     /// Create a new batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
         BatchCreate::batch_create(ctx, args)
     }
 
     /// Add a transaction to the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.batch.size >= ctx.accounts.batch.executed_transaction_index
+     )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.batch.size < u32::MAX);
+        kani::assume(args.ephemeral_signers <= 10);
         BatchAddTransaction::batch_add_transaction(ctx, args)
     }
 
     /// Execute a transaction from the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()
+        && ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size
+    )]
     pub fn batch_execute_transaction(ctx: Context<BatchExecuteTransaction>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 5);
+        kani::assume(ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size);
         BatchExecuteTransaction::batch_execute_transaction(ctx)
     }
 
@@ -356,10 +381,35 @@ pub mod multisig {
     }
 
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.spending_limit.members.contains(&ctx.accounts.member.key())
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+        && args.amount <= ctx.accounts.spending_limit.amount
+        && (
+            ctx.accounts.spending_limit.destinations.is_empty()
+            || ctx.accounts.spending_limit.destinations.contains(&ctx.accounts.destination.key())
+        )
+        && (
+            if ctx.accounts.spending_limit.mint == Pubkey::default() {
+                ctx.accounts.mint.is_none()
+                && ctx.accounts.system_program.is_some()
+                && args.decimals == 9
+                && ctx.accounts.vault.lamports() >= args.amount
+            } else {
+                ctx.accounts.mint.is_some()
+                && ctx.accounts.spending_limit.mint == ctx.accounts.mint.as_ref().unwrap().key()
+                && ctx.accounts.vault_token_account.is_some()
+                && ctx.accounts.destination_token_account.is_some()
+                && ctx.accounts.token_program.is_some()
+            }
+        )
+    )]
     pub fn spending_limit_use(
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 }

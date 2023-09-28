@@ -69,8 +69,11 @@ impl VaultTransactionExecute<'_> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                let now = Clock::get()?.unix_timestamp;
+                kani::assume(now > timestamp);
+                kani::assume(timestamp > 0);
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
@@ -119,7 +122,7 @@ impl VaultTransactionExecute<'_> {
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(transaction_key, &transaction.ephemeral_signer_bumps);
-
+        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
             message_account_infos,
@@ -134,6 +137,7 @@ impl VaultTransactionExecute<'_> {
         proposal.try_serialize(&mut &mut proposal_account_info.data.borrow_mut()[..])?;
 
         // Execute the transaction message instructions one-by-one.
+        #[verify_ignore]
         executable_message.execute_message(
             &vault_seeds
                 .iter()
