@@ -125,6 +125,21 @@ pub mod multisig {
     pub fn confix_tx_execute_validation_helper<'info>(
         ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.actions.len() <= 3);
+        kani::assume(ctx.accounts.multisig.members.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 3);
+        kani::assume(
+            ctx.accounts.multisig.members.len()
+                + ctx
+                    .accounts
+                    .transaction
+                    .actions
+                    .iter()
+                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
+                    .count()
+                <= 10,
+        );
+
         let mut threshold = ctx.accounts.multisig.threshold;
         let members_after = ctx.accounts.transaction.actions.iter().fold(
             Some(ctx.accounts.multisig.members),
@@ -253,20 +268,6 @@ pub mod multisig {
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
-        kani::assume(
-            ctx.accounts.multisig.members.len()
-                + ctx
-                    .accounts
-                    .transaction
-                    .actions
-                    .iter()
-                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
-                    .count()
-                <= 10,
-        );
-        kani::assume(ctx.accounts.transaction.actions.len() <= 3);
-        kani::assume(ctx.accounts.multisig.members.len() <= 5);
-        kani::assume(ctx.remaining_accounts.len() <= 3);
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }
 
