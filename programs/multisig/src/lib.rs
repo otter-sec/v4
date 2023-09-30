@@ -136,6 +136,7 @@ pub mod multisig {
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.transaction.index
         && ctx.remaining_accounts.len() == 
             ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()        
     )]
