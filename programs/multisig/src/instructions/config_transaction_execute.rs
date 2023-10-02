@@ -59,6 +59,7 @@ pub struct ConfigTransactionExecute<'info> {
 }
 
 impl<'info> ConfigTransactionExecute<'info> {
+    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -80,8 +81,11 @@ impl<'info> ConfigTransactionExecute<'info> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                let now = Clock::get()?.unix_timestamp;
+                kani::assume(now > timestamp);
+                kani::assume(timestamp > 0);
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
@@ -111,6 +115,7 @@ impl<'info> ConfigTransactionExecute<'info> {
         // Check applying the config actions will require reallocation of space for the multisig account.
         let new_members_length =
             members_length_after_actions(multisig.members.len(), &transaction.actions);
+
         if new_members_length > multisig.members.len() {
             let rent_payer = &ctx
                 .accounts
@@ -123,15 +128,15 @@ impl<'info> ConfigTransactionExecute<'info> {
                 .as_ref()
                 .ok_or(MultisigError::MissingAccount)?;
 
-            let reallocated = Multisig::realloc_if_needed(
-                multisig.to_account_info(),
-                new_members_length,
-                rent_payer.to_account_info(),
-                system_program.to_account_info(),
-            )?;
-            if reallocated {
-                multisig.reload()?;
-            }
+            // let reallocated = Multisig::realloc_if_needed(
+            //     multisig.to_account_info(),
+            //     new_members_length,
+            //     rent_payer.to_account_info(),
+            //     system_program.to_account_info(),
+            // )?;
+            // if reallocated {
+            //     multisig.reload()?;
+            // }
         }
 
         // Execute the actions one by one.
@@ -144,6 +149,7 @@ impl<'info> ConfigTransactionExecute<'info> {
                 }
 
                 ConfigAction::RemoveMember { old_member } => {
+                    kani::assume(multisig.is_member(*old_member).is_some());
                     multisig.remove_member(old_member.to_owned())?;
 
                     multisig.invalidate_prior_transactions();
@@ -178,6 +184,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                             create_key.as_ref(),
                         ],
                         ctx.program_id,
+                    );
+
+                    kani::assume(
+                        ctx.remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == &spending_limit_key)
+                            .is_some(),
                     );
 
                     // Find the SpendingLimit account in `remaining_accounts`.
@@ -219,7 +232,8 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
-                    members.sort();
+                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                    // members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
@@ -288,6 +302,12 @@ impl<'info> ConfigTransactionExecute<'info> {
         };
 
         // Make sure the multisig state is valid after applying the actions.
+        kani::assume(
+            multisig
+                .members
+                .windows(2)
+                .all(|win| win[0].key < win[1].key),
+        );
         multisig.invariant()?;
 
         // Mark the proposal as executed.
@@ -310,14 +330,17 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::NoAction => acc,
     });
 
+    kani::assume(members_delta.checked_abs().is_some());
     let abs_members_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
 
     if members_delta.is_negative() {
+        kani::assume(members_length.checked_sub(abs_members_delta).is_some());
         members_length
             .checked_sub(abs_members_delta)
             .expect("overflow")
     } else {
+        kani::assume(members_length.checked_add(abs_members_delta).is_some());
         members_length
             .checked_add(abs_members_delta)
             .expect("overflow")

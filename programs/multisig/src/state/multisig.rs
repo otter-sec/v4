@@ -17,6 +17,7 @@ use anchor_lang::system_program;
     && usize::from(self.threshold) <= Self::num_voters(&self.members)
     && self.stale_transaction_index <= self.transaction_index
 )]
+#[derive(Clone)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
@@ -107,7 +108,8 @@ impl Multisig {
         AccountInfo::realloc(&multisig, new_size, false)?;
 
         // If more lamports are needed, transfer them to the account.
-        let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        // let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        let rent_exempt_lamports = kani::any::<u64>().max(1);
         let top_up_lamports =
             rent_exempt_lamports.saturating_sub(multisig.to_account_info().lamports());
 

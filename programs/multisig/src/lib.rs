@@ -108,8 +108,140 @@ pub mod multisig {
         ConfigTransactionCreate::config_transaction_create(ctx, args)
     }
 
+    /// Used in `config_transaction_execute` function's verification
+    pub fn confix_tx_execute_validation_helper<'info>(
+        ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
+    ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.actions.len() <= 3);
+        kani::assume(ctx.accounts.multisig.members.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 3);
+        kani::assume(
+            ctx.accounts.multisig.members.len()
+                + ctx
+                    .accounts
+                    .transaction
+                    .actions
+                    .iter()
+                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
+                    .count()
+                <= 10,
+        );
+
+        let mut threshold = ctx.accounts.multisig.threshold;
+        let members_after = ctx.accounts.transaction.actions.iter().fold(
+            Some(ctx.accounts.multisig.members),
+            |acc, action| match acc {
+                Some(mut members) => match action {
+                    ConfigAction::AddMember { new_member } => {
+                        members.push(*new_member);
+                        Some(members)
+                    }
+                    ConfigAction::RemoveMember { old_member } => {
+                        if let Some(index) = members.iter().position(|m| m.key == *old_member) {
+                            members.remove(index);
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::ChangeThreshold { new_threshold } => {
+                        threshold = *new_threshold;
+                        Some(members)
+                    }
+                    ConfigAction::AddSpendingLimit {
+                        create_key: _,
+                        vault_index: _,
+                        mint: _,
+                        amount: _,
+                        period: _,
+                        members: spending_limit_members,
+                        destinations: _,
+                    } => {
+                        kani::assume(spending_limit_members.len() <= 2);
+                        if !spending_limit_members.is_empty()
+                            && !spending_limit_members
+                                .windows(2)
+                                .any(|win| win[0] == win[1])
+                            && ctx.accounts.system_program.is_some()
+                            && ctx.accounts.rent_payer.is_some()
+                        {
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::RemoveSpendingLimit {
+                        spending_limit: spending_limit_key,
+                    } => {
+                        let spending_limit_account = ctx
+                            .remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == spending_limit_key);
+                        if let Some(account) = spending_limit_account {
+                            if ctx.accounts.rent_payer.is_some()
+                                && Account::<SpendingLimit>::try_from(account)
+                                    .map_or(false, |acc| {
+                                        acc.multisig == ctx.accounts.multisig.key()
+                                    })
+                            {
+                                Some(members)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    }
+                    _ => Some(members),
+                },
+                None => None,
+            },
+        );
+
+        let are_members_after_ok = match members_after {
+            Some(valid_members) => {
+                !valid_members.windows(2).any(|win| win[0].key == win[1].key)
+                    && valid_members.len() > 0
+                    && valid_members.len() <= usize::from(u16::MAX)
+                    && valid_members
+                        .iter()
+                        .any(|m| m.permissions.has(Permission::Execute))
+                    && valid_members
+                        .iter()
+                        .any(|m| m.permissions.has(Permission::Initiate))
+                    && valid_members
+                        .iter()
+                        .filter(|m| m.permissions.has(Permission::Vote))
+                        .count()
+                        >= threshold as usize
+                    && valid_members.iter().all(|m| m.permissions.mask < 8)
+                    && if valid_members.len() > ctx.accounts.multisig.members.len() {
+                        ctx.accounts.system_program.is_some() && ctx.accounts.rent_payer.is_some()
+                    } else {
+                        true
+                    }
+                    && threshold > 0
+            }
+            None => false,
+        };
+
+        if are_members_after_ok {
+            Ok(())
+        } else {
+            Err(Error::AccountDidNotSerialize)
+        }
+    }
+
     /// Execute a config transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && multisig::confix_tx_execute_validation_helper(&ctx).is_ok()
+    )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
