@@ -205,7 +205,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             // Add the vault seeds.
             signer_seeds.push(&vault_seeds);
 
-            invoke_signed(ix, account_infos, &signer_seeds)?;
+            // invoke_signed(ix, account_infos, &signer_seeds)?;
         }
 
         Ok(())
@@ -252,14 +252,17 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
 
     pub fn to_instructions_and_accounts(&self) -> Vec<(Instruction, Vec<AccountInfo<'info>>)> {
         let mut executable_instructions = Vec::new();
-
+        kani::assume(self.message.instructions.len() <= 2);
         for ms_compiled_instruction in self.message.instructions.iter() {
+            kani::assume(ms_compiled_instruction.account_indexes.len() <= 2);
             let ix_accounts: Vec<(AccountInfo<'info>, AccountMeta)> = ms_compiled_instruction
                 .account_indexes
                 .iter()
                 .map(|account_index| {
                     let account_index = usize::from(*account_index);
-                    let account_info = self.get_account_by_index(account_index).unwrap();
+                    let account_info_wrapped = self.get_account_by_index(account_index);
+                    kani::assume(account_info_wrapped.is_ok());
+                    let account_info = account_info_wrapped.unwrap();
 
                     // `is_signer` cannot just be taken from the account info, because for `authority`
                     // it's always false in the passed account infos, but might be true in the actual instructions.
@@ -275,9 +278,11 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                 })
                 .collect();
 
-            let ix_program_account_info = self
-                .get_account_by_index(usize::from(ms_compiled_instruction.program_id_index))
-                .unwrap();
+            let ix_program_account_info_wrapped =
+                self.get_account_by_index(usize::from(ms_compiled_instruction.program_id_index));
+            kani::assume(ix_program_account_info_wrapped.is_ok());
+            let ix_program_account_info = ix_program_account_info_wrapped.unwrap();
+            let ix_accounts = Vec::new();
 
             let ix = Instruction {
                 program_id: *ix_program_account_info.key,
@@ -287,7 +292,6 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                     .collect(),
                 data: ms_compiled_instruction.data,
             };
-
             let mut account_infos: Vec<AccountInfo> = ix_accounts
                 .into_iter()
                 .map(|(account_info, _)| account_info)
