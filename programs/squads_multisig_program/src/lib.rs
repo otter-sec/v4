@@ -56,6 +56,14 @@ pub mod squads_multisig_program {
     }
 
     /// Add a new member to the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() <= usize::from(u16::MAX-1)
+        && ctx.accounts.multisig.members.iter().all(|m| m.key != args.new_member.key)
+        && ctx.accounts.system_program.is_some()
+        && ctx.accounts.rent_payer.is_some()
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_member.permissions.mask < 8
+    )]
     pub fn multisig_add_member(
         ctx: Context<MultisigConfig>,
         args: MultisigAddMemberArgs,
@@ -64,6 +72,17 @@ pub mod squads_multisig_program {
     }
 
     /// Remove a member/key from the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() > 1
+        && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Execute))
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Initiate))
+        && ctx.accounts.multisig.members.iter().filter(|m| m.key != args.old_member && m.permissions.has(Permission::Vote)).count() 
+            >= ctx.accounts.multisig.threshold as usize
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.multisig.is_member(args.old_member).is_some()
+        && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
+    )]
     pub fn multisig_remove_member(
         ctx: Context<MultisigConfig>,
         args: MultisigRemoveMemberArgs,
@@ -72,6 +91,10 @@ pub mod squads_multisig_program {
     }
 
     /// Set the `time_lock` config parameter for the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.time_lock <= MAX_TIME_LOCK
+    )]
     pub fn multisig_set_time_lock(
         ctx: Context<MultisigConfig>,
         args: MultisigSetTimeLockArgs,
@@ -80,6 +103,11 @@ pub mod squads_multisig_program {
     }
 
     /// Set the `threshold` config parameter for the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_threshold > 0
+        && args.new_threshold as usize <= ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+    )]
     pub fn multisig_change_threshold(
         ctx: Context<MultisigConfig>,
         args: MultisigChangeThresholdArgs,
@@ -88,6 +116,9 @@ pub mod squads_multisig_program {
     }
 
     /// Set the multisig `config_authority`.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_set_config_authority(
         ctx: Context<MultisigConfig>,
         args: MultisigSetConfigAuthorityArgs,
@@ -160,38 +191,96 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new multisig proposal.
+    #[succeeds_if(
+        args.transaction_index <= ctx.accounts.multisig.transaction_index
+        && args.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && (
+            ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+                || ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Vote)
+        )
+    )]
     pub fn proposal_create(ctx: Context<ProposalCreate>, args: ProposalCreateArgs) -> Result<()> {
         ProposalCreate::proposal_create(ctx, args)
     }
 
     /// Update status of a multisig proposal from `Draft` to `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn proposal_activate(ctx: Context<ProposalActivate>) -> Result<()> {
         ProposalActivate::proposal_activate(ctx)
     }
 
     /// Approve a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.approved.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_approve(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_approve(ctx, args)
     }
 
     /// Reject a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.rejected.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_reject(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_reject(ctx, args)
     }
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.proposal.multisig == ctx.accounts.multisig.key()
+        && !ctx.accounts.proposal.cancelled.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_cancel(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_cancel(ctx, args)
     }
-
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.spending_limit.members.contains(&ctx.accounts.member.key())
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+        && args.amount <= ctx.accounts.spending_limit.amount
+        && (
+            ctx.accounts.spending_limit.destinations.is_empty()
+            || ctx.accounts.spending_limit.destinations.contains(&ctx.accounts.destination.key())
+        )
+        && (
+            if ctx.accounts.spending_limit.mint == Pubkey::default() {
+                ctx.accounts.mint.is_none()
+                && ctx.accounts.system_program.is_some()
+                && args.decimals == 9
+                && ctx.accounts.vault.lamports() >= args.amount
+            } else {
+                ctx.accounts.mint.is_some()
+                && ctx.accounts.spending_limit.mint == ctx.accounts.mint.as_ref().unwrap().key()
+                && ctx.accounts.vault_token_account.is_some()
+                && ctx.accounts.destination_token_account.is_some()
+                && ctx.accounts.token_program.is_some()
+            }
+        )
+    )]
     pub fn spending_limit_use(
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 }
