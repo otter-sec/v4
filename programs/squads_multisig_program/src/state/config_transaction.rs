@@ -9,6 +9,12 @@ use super::*;
 #[account]
 #[invariant(
     !self.actions.is_empty()
+    && self.actions.iter().all(|action| 
+        if let ConfigAction::SetTimeLock { new_time_lock, .. } = action {
+                *new_time_lock <= MAX_TIME_LOCK
+        } else {
+            true
+        })
 )]
 pub struct ConfigTransaction {
     /// The multisig this belongs to.
