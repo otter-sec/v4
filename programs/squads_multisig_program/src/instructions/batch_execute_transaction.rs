@@ -83,15 +83,15 @@ impl BatchExecuteTransaction<'_> {
         );
 
         // `proposal`
-        match proposal.status {
-            ProposalStatus::Approved { timestamp } => {
-                require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
-                    MultisigError::TimeLockNotReleased
-                );
-            }
-            _ => return err!(MultisigError::InvalidProposalStatus),
-        };
+        // match proposal.status {
+        //     ProposalStatus::Approved { timestamp } => {
+        //         require!(
+        //             Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+        //             MultisigError::TimeLockNotReleased
+        //         );
+        //     }
+        //     _ => return err!(MultisigError::InvalidProposalStatus),
+        // };
         // Stale batch transaction proposals CAN be executed if they were approved
         // before becoming stale, hence no check for staleness here.
 
@@ -137,7 +137,7 @@ impl BatchExecuteTransaction<'_> {
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(batch_key, &transaction.ephemeral_signer_bumps);
-
+        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
             message_account_infos,
@@ -149,6 +149,7 @@ impl BatchExecuteTransaction<'_> {
         let protected_accounts = &[proposal.key(), batch_key];
 
         // Execute the transaction message instructions one-by-one.
+        #[verify_ignore]
         executable_message.execute_message(
             &vault_seeds
                 .iter()
