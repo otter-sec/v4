@@ -124,8 +124,8 @@ impl VaultTransactionExecute<'_> {
 
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
-            message_account_infos,
-            address_lookup_table_account_infos,
+            &message_account_infos.to_vec().into(),
+            &address_lookup_table_account_infos.to_vec().into(),
             &vault_pubkey,
             &ephemeral_signer_keys,
         )?;
