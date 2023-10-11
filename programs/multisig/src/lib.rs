@@ -268,6 +268,7 @@ pub mod multisig {
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.transaction.index
         && ctx.remaining_accounts.len() == 
             ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()        
     )]
@@ -291,6 +292,9 @@ pub mod multisig {
         ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
         && ctx.accounts.batch.size >= ctx.accounts.batch.executed_transaction_index
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
      )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
@@ -307,6 +311,7 @@ pub mod multisig {
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
         && ctx.remaining_accounts.len() == 
             ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()
         && ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size
