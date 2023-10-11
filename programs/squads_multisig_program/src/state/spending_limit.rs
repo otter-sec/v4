@@ -85,6 +85,7 @@ impl SpendingLimit {
         let has_duplicates = self.members.windows(2).any(|win| win[0] == win[1]);
         require!(!has_duplicates, MultisigError::DuplicateMember);
 
+        require!(self.amount > 0, MultisigError::DuplicateMember);
         Ok(())
     }
 }

@@ -127,6 +127,12 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new spending limit for the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && !args.members.is_empty()
+        && !args.members.windows(2).any(|win| win[0] == win[1])
+        && args.amount > 0
+    )]
     pub fn multisig_add_spending_limit(
         ctx: Context<MultisigAddSpendingLimit>,
         args: MultisigAddSpendingLimitArgs,
@@ -135,6 +141,10 @@ pub mod squads_multisig_program {
     }
 
     /// Remove the spending limit from the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn multisig_remove_spending_limit(
         ctx: Context<MultisigRemoveSpendingLimit>,
         args: MultisigRemoveSpendingLimitArgs,
