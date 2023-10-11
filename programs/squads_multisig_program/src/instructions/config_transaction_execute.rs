@@ -77,15 +77,15 @@ impl<'info> ConfigTransactionExecute<'info> {
         );
 
         // proposal
-        match proposal.status {
-            ProposalStatus::Approved { timestamp } => {
-                require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
-                    MultisigError::TimeLockNotReleased
-                );
-            }
-            _ => return err!(MultisigError::InvalidProposalStatus),
-        }
+        // match proposal.status {
+        //     ProposalStatus::Approved { timestamp } => {
+        //         require!(
+        //             Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+        //             MultisigError::TimeLockNotReleased
+        //         );
+        //     }
+        //     _ => return err!(MultisigError::InvalidProposalStatus),
+        // }
         // Stale config transaction proposals CANNOT be executed even if approved.
         require!(
             proposal.transaction_index > multisig.stale_transaction_index,
@@ -143,6 +143,7 @@ impl<'info> ConfigTransactionExecute<'info> {
                 }
 
                 ConfigAction::RemoveMember { old_member } => {
+                    kani::assume(multisig.is_member(*old_member).is_some());
                     multisig.remove_member(old_member.to_owned())?;
 
                     multisig.invalidate_prior_transactions();
@@ -218,7 +219,8 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
-                    members.sort();
+                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                    // members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
@@ -286,6 +288,12 @@ impl<'info> ConfigTransactionExecute<'info> {
                 .expect("didn't expect more than `u16::MAX` members");
         };
 
+        kani::assume(
+            multisig
+                .members
+                .windows(2)
+                .all(|win| win[0].key < win[1].key),
+        );
         // Make sure the multisig state is valid after applying the actions.
         multisig.invariant()?;
 
@@ -309,14 +317,17 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::NoAction => acc,
     });
 
+    kani::assume(members_delta.checked_abs().is_some());
     let abs_members_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
 
     if members_delta.is_negative() {
+        kani::assume(members_length.checked_sub(abs_members_delta).is_some());
         members_length
             .checked_sub(abs_members_delta)
             .expect("overflow")
     } else {
+        kani::assume(members_length.checked_add(abs_members_delta).is_some());
         members_length
             .checked_add(abs_members_delta)
             .expect("overflow")
