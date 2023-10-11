@@ -3,11 +3,11 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct BatchCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
-    pub memo: Option<String>,
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

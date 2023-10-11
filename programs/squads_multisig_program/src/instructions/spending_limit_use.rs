@@ -6,14 +6,14 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary)]
 pub struct SpendingLimitUseArgs {
     /// Amount of tokens to transfer.
     pub amount: u64,
     /// Decimals of the token mint. Used for double-checking against incorrect order of magnitude of `amount`.
     pub decimals: u8,
-    /// Memo used for indexing.
-    pub memo: Option<String>,
+    // Memo used for indexing.
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

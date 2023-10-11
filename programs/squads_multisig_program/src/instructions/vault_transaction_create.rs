@@ -4,14 +4,14 @@ use crate::errors::*;
 use crate::state::*;
 use crate::utils::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
     pub transaction_message: Vec<u8>,
-    pub memo: Option<String>,
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]
@@ -132,7 +132,7 @@ impl VaultTransactionCreate<'_> {
 }
 
 /// Unvalidated instruction data, must be treated as untrusted.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct TransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -150,7 +150,7 @@ pub struct TransactionMessage {
 }
 
 // Concise serialization schema for instructions that make up transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct CompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -161,7 +161,7 @@ pub struct CompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts in a single tx.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct MessageAddressTableLookup {
     /// Address lookup table account key
     pub account_key: Pubkey,

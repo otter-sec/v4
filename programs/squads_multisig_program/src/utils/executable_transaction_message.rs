@@ -1,24 +1,23 @@
 use std::collections::HashMap;
 use std::convert::From;
 
+use crate::errors::*;
+use crate::state::*;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::program::invoke_signed;
 use solana_address_lookup_table_program::state::AddressLookupTable;
-
-use crate::errors::*;
-use crate::state::*;
 
 /// Sanitized and validated combination of a `MsTransactionMessage` and `AccountInfo`s it references.
 pub struct ExecutableTransactionMessage<'a, 'info> {
     /// Message which loaded a collection of lookup table addresses.
     message: &'a VaultTransactionMessage,
     /// Resolved `account_keys` of the message.
-    static_accounts: Vec<&'a AccountInfo<'info>>,
+    static_accounts: Vec<AccountInfo<'info>>,
     /// Concatenated vector of resolved `writable_indexes` from all address lookups.
-    loaded_writable_accounts: Vec<&'a AccountInfo<'info>>,
+    loaded_writable_accounts: Vec<AccountInfo<'info>>,
     /// Concatenated vector of resolved `readonly_indexes` from all address lookups.
-    loaded_readonly_accounts: Vec<&'a AccountInfo<'info>>,
+    loaded_readonly_accounts: Vec<AccountInfo<'info>>,
 }
 
 impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
@@ -91,7 +90,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             if message.is_static_writable_index(i) {
                 require!(account_info.is_writable, MultisigError::InvalidAccount);
             }
-            static_accounts.push(account_info);
+            static_accounts.push(account_info.clone());
         }
 
         let mut writable_accounts = Vec::new();
@@ -134,7 +133,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                     MultisigError::InvalidAccount
                 );
 
-                writable_accounts.push(*loaded_account_info);
+                writable_accounts.push((*loaded_account_info).clone());
             }
             message_indexes_cursor += lookup.writable_indexes.len();
 
@@ -156,7 +155,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                     MultisigError::InvalidAccount
                 );
 
-                readonly_accounts.push(*loaded_account_info);
+                readonly_accounts.push((*loaded_account_info).clone());
             }
             message_indexes_cursor += lookup.readonly_indexes.len();
         }
@@ -218,17 +217,17 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     /// 3. All loaded readonly accounts.
     fn get_account_by_index(&self, index: usize) -> Result<&'a AccountInfo<'info>> {
         if index < self.static_accounts.len() {
-            return Ok(self.static_accounts[index]);
+            return Ok(&self.static_accounts[index]);
         }
 
         let index = index - self.static_accounts.len();
         if index < self.loaded_writable_accounts.len() {
-            return Ok(self.loaded_writable_accounts[index]);
+            return Ok(&self.loaded_writable_accounts[index]);
         }
 
         let index = index - self.loaded_writable_accounts.len();
         if index < self.loaded_readonly_accounts.len() {
-            return Ok(self.loaded_readonly_accounts[index]);
+            return Ok(&self.loaded_readonly_accounts[index]);
         }
 
         Err(MultisigError::InvalidTransactionMessage.into())
@@ -252,7 +251,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     }
 
     pub fn to_instructions_and_accounts(&self) -> Vec<(Instruction, Vec<AccountInfo<'info>>)> {
-        let mut executable_instructions = vec![];
+        let mut executable_instructions = Vec::new();
 
         for ms_compiled_instruction in self.message.instructions.iter() {
             let ix_accounts: Vec<(AccountInfo<'info>, AccountMeta)> = ms_compiled_instruction

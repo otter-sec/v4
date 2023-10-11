@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigAddSpendingLimitArgs {
     /// Key that is used to seed the SpendingLimit PDA.
     pub create_key: Pubkey,
@@ -25,8 +25,8 @@ pub struct MultisigAddSpendingLimitArgs {
     /// The destination addresses the spending limit is allowed to sent funds to.
     /// If empty, funds can be sent to any address.
     pub destinations: Vec<Pubkey>,
-    /// Memo is used for indexing only.
-    pub memo: Option<String>,
+    // Memo is used for indexing only.
+    // pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

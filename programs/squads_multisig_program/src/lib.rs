@@ -13,7 +13,7 @@ pub use anchor_lang;
 
 pub use instructions::*;
 pub use state::*;
-pub use utils::SmallVec;
+// pub use utils::SmallVec;
 
 pub mod errors;
 pub mod instructions;
@@ -41,6 +41,15 @@ pub mod squads_multisig_program {
     use super::*;
 
     /// Create a multisig.
+    #[succeeds_if(
+        args.members.len() <= usize::from(u16::MAX)
+        && args.members.windows(2).all(|win| win[0].key != win[1].key)
+        && args.members.iter().all(|m| m.permissions.mask < 8)
+        && args.members.iter().any(|m| m.permissions.has(Permission::Initiate))
+        && args.members.iter().any(|m| m.permissions.has(Permission::Execute))
+        && args.threshold > 0
+        && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+    )]
     pub fn multisig_create(ctx: Context<MultisigCreate>, args: MultisigCreateArgs) -> Result<()> {
         MultisigCreate::multisig_create(ctx, args)
     }

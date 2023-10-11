@@ -8,6 +8,20 @@ use crate::errors::*;
 pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 
 #[account]
+#[invariant(
+    !self.members.is_empty()
+    && self.members.len() <= usize::from(u16::MAX)
+    && self.threshold <= self.members.len() as u16
+    && self.threshold > 0
+    && !self.members.windows(2).any(|win| win[0].key == win[1].key)
+    && self.members.iter().all(|m| m.permissions.mask < 8)
+    && Self::num_proposers(&self.members) > 0
+    && Self::num_executors(&self.members) > 0
+    && Self::num_voters(&self.members) > 0
+    && usize::from(self.threshold) <= Self::num_voters(&self.members)
+    && self.stale_transaction_index <= self.transaction_index
+)]
+#[derive(Clone)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
@@ -234,7 +248,9 @@ impl Multisig {
     }
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone)]
+#[derive(
+    AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone, Default, Arbitrary, Copy,
+)]
 pub struct Member {
     pub key: Pubkey,
     pub permissions: Permissions,
@@ -249,7 +265,16 @@ pub enum Permission {
 
 /// Bitmask for permissions.
 #[derive(
-    AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug,
+    AnchorSerialize,
+    AnchorDeserialize,
+    InitSpace,
+    Eq,
+    PartialEq,
+    Clone,
+    Copy,
+    Default,
+    Debug,
+    Arbitrary,
 )]
 pub struct Permissions {
     pub mask: u8,
