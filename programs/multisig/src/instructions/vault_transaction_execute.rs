@@ -48,6 +48,7 @@ pub struct VaultTransactionExecute<'info> {
 }
 
 impl VaultTransactionExecute<'_> {
+    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -67,13 +68,11 @@ impl VaultTransactionExecute<'_> {
         );
 
         // proposal
+        #[verify_ignore]
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
-                let now = Clock::get()?.unix_timestamp;
-                kani::assume(now > timestamp);
-                kani::assume(timestamp > 0);
                 require!(
-                    now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
+                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
@@ -122,11 +121,11 @@ impl VaultTransactionExecute<'_> {
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(transaction_key, &transaction.ephemeral_signer_bumps);
-        #[verify_ignore]
+
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
-            message_account_infos,
-            address_lookup_table_account_infos,
+            &message_account_infos.to_vec().into(),
+            &address_lookup_table_account_infos.to_vec().into(),
             &vault_pubkey,
             &ephemeral_signer_keys,
         )?;
