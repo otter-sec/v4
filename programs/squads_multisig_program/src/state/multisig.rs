@@ -20,6 +20,7 @@ pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
     && Self::num_voters(&self.members) > 0
     && usize::from(self.threshold) <= Self::num_voters(&self.members)
     && self.stale_transaction_index <= self.transaction_index
+    && self.time_lock <= MAX_TIME_LOCK
 )]
 #[derive(Clone)]
 pub struct Multisig {
@@ -112,7 +113,8 @@ impl Multisig {
         AccountInfo::realloc(&multisig, new_size, false)?;
 
         // If more lamports are needed, transfer them to the account.
-        let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        // let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        let rent_exempt_lamports = kani::any::<u64>().max(1);
         let top_up_lamports =
             rent_exempt_lamports.saturating_sub(multisig.to_account_info().lamports());
 
@@ -227,8 +229,10 @@ impl Multisig {
     }
 
     /// Add `new_member` to the multisig `members` vec and sort the vec.
+    #[helper_fn]
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
+        #[verify_ignore]
         self.members.sort_by_key(|m| m.key);
     }
 

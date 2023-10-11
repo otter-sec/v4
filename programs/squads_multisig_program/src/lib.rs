@@ -49,6 +49,7 @@ pub mod squads_multisig_program {
         && args.members.iter().any(|m| m.permissions.has(Permission::Execute))
         && args.threshold > 0
         && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+        && args.time_lock <= MAX_TIME_LOCK
     )]
     pub fn multisig_create(ctx: Context<MultisigCreate>, args: MultisigCreateArgs) -> Result<()> {
         MultisigCreate::multisig_create(ctx, args)

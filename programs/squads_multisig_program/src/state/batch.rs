@@ -8,7 +8,9 @@ use crate::{TransactionMessage, VaultTransactionMessage};
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 /// The transactions themselves are stored in separate PDAs associated with the this account.
 #[account]
-#[invariant()]
+#[invariant(
+    self.size >= self.executed_transaction_index
+)]
 #[derive(InitSpace)]
 pub struct Batch {
     /// The multisig this belongs to.
