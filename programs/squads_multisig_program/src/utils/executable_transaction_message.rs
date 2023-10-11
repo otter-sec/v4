@@ -215,7 +215,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     /// 1. Static accounts.
     /// 2. All loaded writable accounts.
     /// 3. All loaded readonly accounts.
-    fn get_account_by_index(&self, index: usize) -> Result<&'a AccountInfo<'info>> {
+    fn get_account_by_index(&'a self, index: usize) -> Result<&'a AccountInfo<'info>> {
         if index < self.static_accounts.len() {
             return Ok(&self.static_accounts[index]);
         }

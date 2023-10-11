@@ -48,6 +48,12 @@ pub struct SpendingLimit {
     pub destinations: Vec<Pubkey>,
 }
 
+impl Owner for SpendingLimit {
+    fn owner() -> Pubkey {
+        kani::any()
+    }
+}
+
 impl SpendingLimit {
     pub fn size(members_length: usize, destinations_length: usize) -> usize {
         8  + // anchor discriminator
