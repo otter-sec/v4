@@ -290,7 +290,7 @@ pub mod squads_multisig_program {
                         true
                     }
                     && threshold > 0
-                    && timelock < MAX_TIME_LOCK
+                    && timelock <= MAX_TIME_LOCK
             }
             None => false,
         };

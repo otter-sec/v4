@@ -182,6 +182,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                         ctx.program_id,
                     );
 
+                    kani::assume(
+                        ctx.remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == &spending_limit_key)
+                            .is_some(),
+                    );
+
                     // Find the SpendingLimit account in `remaining_accounts`.
                     let spending_limit_info = ctx
                         .remaining_accounts
