@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::convert::From;
 
 use crate::errors::*;
@@ -43,34 +43,28 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             message.address_table_lookups.len(),
             MultisigError::InvalidNumberOfAccounts
         );
-        let lookup_tables: HashMap<&Pubkey, &AccountInfo> = address_lookup_table_account_infos
-            .iter()
-            .map(|maybe_lookup_table| {
-                kani::assume(
-                    maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
-                );
-                // The lookup table account must be owned by SolanaAddressLookupTableProgram.
-                require!(
-                    maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
-                    MultisigError::InvalidAccount
-                );
-                kani::assume(
-                    message
-                        .address_table_lookups
-                        .iter()
-                        .any(|lookup| &lookup.account_key == maybe_lookup_table.key),
-                );
-                // The lookup table must be mentioned in `message.address_table_lookups`.
-                require!(
-                    message
-                        .address_table_lookups
-                        .iter()
-                        .any(|lookup| &lookup.account_key == maybe_lookup_table.key),
-                    MultisigError::InvalidAccount
-                );
-                Ok((maybe_lookup_table.key, maybe_lookup_table))
-            })
-            .collect::<Result<HashMap<&Pubkey, &AccountInfo>>>()?;
+        let mut lookup_tables: HashMap<Pubkey, AccountInfo> = HashMap::new();
+        for maybe_lookup_table in address_lookup_table_account_infos {
+            kani::assume(maybe_lookup_table.owner == &solana_address_lookup_table_program::id());
+            require!(
+                maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
+                MultisigError::InvalidAccount
+            );
+            kani::assume(
+                message
+                    .address_table_lookups
+                    .iter()
+                    .any(|lookup| &lookup.account_key == maybe_lookup_table.key),
+            );
+            require!(
+                message
+                    .address_table_lookups
+                    .iter()
+                    .any(|lookup| &lookup.account_key == maybe_lookup_table.key),
+                MultisigError::InvalidAccount
+            );
+            lookup_tables.insert(*maybe_lookup_table.key, *maybe_lookup_table);
+        }
 
         kani::assume(message_account_infos.len() <= 3);
         // CHECK: `account_infos` should exactly match the number of accounts mentioned in the message.
