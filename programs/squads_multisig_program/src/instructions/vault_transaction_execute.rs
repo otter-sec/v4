@@ -119,7 +119,6 @@ impl VaultTransactionExecute<'_> {
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(transaction_key, &transaction.ephemeral_signer_bumps);
-        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
             message_account_infos,
@@ -131,7 +130,6 @@ impl VaultTransactionExecute<'_> {
         let protected_accounts = &[proposal.key()];
 
         // Execute the transaction message instructions one-by-one.
-        #[verify_ignore]
         executable_message.execute_message(
             &vault_seeds
                 .iter()

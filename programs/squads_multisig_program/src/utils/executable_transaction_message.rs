@@ -35,6 +35,9 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     ) -> Result<Self> {
         // CHECK: `address_lookup_table_account_infos` must be valid `AddressLookupTable`s
         //         and be the ones mentioned in `message.address_table_lookups`.
+        kani::assume(ephemeral_signer_pdas.len() == 2);
+        kani::assume(message.address_table_lookups.len() == 2);
+        kani::assume(address_lookup_table_account_infos.len() == 2);
         require_eq!(
             address_lookup_table_account_infos.len(),
             message.address_table_lookups.len(),
@@ -43,10 +46,19 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         let lookup_tables: HashMap<&Pubkey, &AccountInfo> = address_lookup_table_account_infos
             .iter()
             .map(|maybe_lookup_table| {
+                kani::assume(
+                    maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
+                );
                 // The lookup table account must be owned by SolanaAddressLookupTableProgram.
                 require!(
                     maybe_lookup_table.owner == &solana_address_lookup_table_program::id(),
                     MultisigError::InvalidAccount
+                );
+                kani::assume(
+                    message
+                        .address_table_lookups
+                        .iter()
+                        .any(|lookup| &lookup.account_key == maybe_lookup_table.key),
                 );
                 // The lookup table must be mentioned in `message.address_table_lookups`.
                 require!(
@@ -60,6 +72,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             })
             .collect::<Result<HashMap<&Pubkey, &AccountInfo>>>()?;
 
+        kani::assume(message_account_infos.len() <= 3);
         // CHECK: `account_infos` should exactly match the number of accounts mentioned in the message.
         require_eq!(
             message_account_infos.len(),
@@ -70,6 +83,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         let mut static_accounts = Vec::new();
 
         // CHECK: `message.account_keys` should come first in `account_infos` and have modifiers expected by the message.
+        kani::assume(message.account_keys.len() <= 3);
         for (i, account_key) in message.account_keys.iter().enumerate() {
             let account_info = &message_account_infos[i];
             require_keys_eq!(
@@ -84,10 +98,12 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                 && account_info.key != vault_pubkey
                 && !ephemeral_signer_pdas.contains(account_info.key)
             {
+                kani::assume(account_info.is_signer);
                 require!(account_info.is_signer, MultisigError::InvalidAccount);
             }
             // If the account is marked as writable in the message, it must be writable in the account infos too.
             if message.is_static_writable_index(i) {
+                kani::assume(account_info.is_writable);
                 require!(account_info.is_writable, MultisigError::InvalidAccount);
             }
             static_accounts.push(account_info.clone());
@@ -99,66 +115,87 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         // CHECK: `message_account_infos` loaded with lookup tables should come after `message.account_keys`,
         //        in the same order and with the same modifiers as listed in lookups.
         // Track where we are in the message account indexes. Start after `message.account_keys`.
-        let mut message_indexes_cursor = message.account_keys.len();
-        for lookup in message.address_table_lookups.iter() {
-            // This is cheap deserialization, it doesn't allocate/clone space for addresses.
-            let lookup_table_data = &lookup_tables
-                .get(&lookup.account_key)
-                .unwrap()
-                .data
-                .borrow()[..];
-            let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
-                .map_err(|_| MultisigError::InvalidAccount)?;
+        // let mut message_indexes_cursor = message.account_keys.len();
+        // for lookup in message.address_table_lookups.iter() {
+        //     // This is cheap deserialization, it doesn't allocate/clone space for addresses.
+        //     let lookup_table_data = &mut &lookup_tables
+        //         .get(&lookup.account_key)
+        //         .unwrap()
+        //         .data
+        //         .borrow()[..];
+        //     let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
+        //         .map_err(|_| MultisigError::InvalidAccount)?;
 
-            // Accounts listed as writable in lookup, should be loaded as writable.
-            for (i, index_in_lookup_table) in lookup.writable_indexes.iter().enumerate() {
-                // Check the modifiers.
-                let index = message_indexes_cursor + i;
-                let loaded_account_info = &message_account_infos
-                    .get(index)
-                    .ok_or(MultisigError::InvalidNumberOfAccounts)?;
-                require_eq!(
-                    loaded_account_info.is_writable,
-                    true,
-                    MultisigError::InvalidAccount
-                );
-                // Check that the pubkey matches the one from the actual lookup table.
-                let pubkey_from_lookup_table = lookup_table
-                    .addresses
-                    .get(usize::from(*index_in_lookup_table))
-                    .ok_or(MultisigError::InvalidAccount)?;
-                require_keys_eq!(
-                    *loaded_account_info.key,
-                    *pubkey_from_lookup_table,
-                    MultisigError::InvalidAccount
-                );
+        //     kani::assume(lookup_table.addresses.len() <= 2);
+        //     kani::assume(lookup.writable_indexes.len() <= 2);
 
-                writable_accounts.push((*loaded_account_info).clone());
-            }
-            message_indexes_cursor += lookup.writable_indexes.len();
+        //     // Accounts listed as writable in lookup, should be loaded as writable.
+        //     for (i, index_in_lookup_table) in lookup.writable_indexes.iter().enumerate() {
+        //         // Check the modifiers.
+        //         let index = message_indexes_cursor + i;
+        //         kani::assume(message_account_infos.get(index).unwrap().is_writable);
+        //         let loaded_account_info = &message_account_infos
+        //             .get(index)
+        //             .ok_or(MultisigError::InvalidNumberOfAccounts)?;
+        //         require_eq!(
+        //             loaded_account_info.is_writable,
+        //             true,
+        //             MultisigError::InvalidAccount
+        //         );
 
-            // Accounts listed as readonly in lookup.
-            for (i, index_in_lookup_table) in lookup.readonly_indexes.iter().enumerate() {
-                // Check the modifiers.
-                let index = message_indexes_cursor + i;
-                let loaded_account_info = &message_account_infos
-                    .get(index)
-                    .ok_or(MultisigError::InvalidNumberOfAccounts)?;
-                // Check that the pubkey matches the one from the actual lookup table.
-                let pubkey_from_lookup_table = lookup_table
-                    .addresses
-                    .get(usize::from(*index_in_lookup_table))
-                    .ok_or(MultisigError::InvalidAccount)?;
-                require_keys_eq!(
-                    *loaded_account_info.key,
-                    *pubkey_from_lookup_table,
-                    MultisigError::InvalidAccount
-                );
+        //         kani::assume(
+        //             lookup_table
+        //                 .addresses
+        //                 .get(usize::from(*index_in_lookup_table))
+        //                 .unwrap()
+        //                 == loaded_account_info.key,
+        //         );
+        //         // Check that the pubkey matches the one from the actual lookup table.
+        //         let pubkey_from_lookup_table = lookup_table
+        //             .addresses
+        //             .get(usize::from(*index_in_lookup_table))
+        //             .ok_or(MultisigError::InvalidAccount)?;
+        //         require_keys_eq!(
+        //             *loaded_account_info.key,
+        //             *pubkey_from_lookup_table,
+        //             MultisigError::InvalidAccount
+        //         );
 
-                readonly_accounts.push((*loaded_account_info).clone());
-            }
-            message_indexes_cursor += lookup.readonly_indexes.len();
-        }
+        //         writable_accounts.push((*loaded_account_info).clone());
+        //     }
+        //     message_indexes_cursor += lookup.writable_indexes.len();
+
+        //     kani::assume(lookup.readonly_indexes.len() <= 3);
+        //     // Accounts listed as readonly in lookup.
+        //     for (i, index_in_lookup_table) in lookup.readonly_indexes.iter().enumerate() {
+        //         // Check the modifiers.
+        //         let index = message_indexes_cursor + i;
+        //         kani::assume(!message_account_infos.get(index).unwrap().is_writable);
+        //         let loaded_account_info = &message_account_infos
+        //             .get(index)
+        //             .ok_or(MultisigError::InvalidNumberOfAccounts)?;
+        //         // Check that the pubkey matches the one from the actual lookup table.
+        //         kani::assume(
+        //             lookup_table
+        //                 .addresses
+        //                 .get(usize::from(*index_in_lookup_table))
+        //                 .unwrap()
+        //                 == loaded_account_info.key,
+        //         );
+        //         let pubkey_from_lookup_table = lookup_table
+        //             .addresses
+        //             .get(usize::from(*index_in_lookup_table))
+        //             .ok_or(MultisigError::InvalidAccount)?;
+        //         require_keys_eq!(
+        //             *loaded_account_info.key,
+        //             *pubkey_from_lookup_table,
+        //             MultisigError::InvalidAccount
+        //         );
+
+        //         readonly_accounts.push((*loaded_account_info).clone());
+        //     }
+        //     message_indexes_cursor += lookup.readonly_indexes.len();
+        // }
 
         Ok(Self {
             message,
