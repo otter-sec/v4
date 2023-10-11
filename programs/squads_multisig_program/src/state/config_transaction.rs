@@ -7,7 +7,9 @@ use super::*;
 /// Config transaction can perform a predefined set of actions on the Multisig PDA, such as adding/removing members,
 /// changing the threshold, etc.
 #[account]
-#[invariant()]
+#[invariant(
+    !self.actions.is_empty()
+)]
 pub struct ConfigTransaction {
     /// The multisig this belongs to.
     pub multisig: Pubkey,

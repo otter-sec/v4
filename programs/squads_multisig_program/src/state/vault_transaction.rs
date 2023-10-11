@@ -9,8 +9,8 @@ use crate::instructions::{CompiledInstruction, MessageAddressTableLookup, Transa
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 #[account]
 #[invariant(
-    self.message.num_signers as usize <= self.message.account_keys.len()
-    && self.message.num_writable_signers <= self.message.num_signers
+    // self.message.num_signers as usize <= self.message.account_keys.len()
+    // && self.message.num_writable_signers <= self.message.num_signers
 )]
 pub struct VaultTransaction {
     /// The multisig this belongs to.

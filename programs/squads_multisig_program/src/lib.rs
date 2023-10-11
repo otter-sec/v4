@@ -153,10 +153,23 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new config transaction.
+    #[succeeds_if(
+        !args.actions.is_empty()
+        && ctx.accounts.multisig.config_authority == Pubkey::default()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.multisig.transaction_index < u64::MAX
+        && args.actions.iter().all(|action| 
+            if let ConfigAction::SetTimeLock { new_time_lock, .. } = action {
+                    *new_time_lock <= MAX_TIME_LOCK
+            } else {
+                true
+            })
+    )]
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX);
         ConfigTransactionCreate::config_transaction_create(ctx, args)
     }
 
@@ -169,10 +182,15 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new vault transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
+        kani::assume(args.ephemeral_signers <= 10);
         VaultTransactionCreate::vault_transaction_create(ctx, args)
     }
 
@@ -183,15 +201,30 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
         BatchCreate::batch_create(ctx, args)
     }
 
     /// Add a transaction to the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(),  Permission::Initiate)
+        && ctx.accounts.member.key() == ctx.accounts.batch.creator
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.batch.size >= ctx.accounts.batch.executed_transaction_index
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
+     )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.batch.size < u32::MAX);
+        kani::assume(args.ephemeral_signers <= 10);
         BatchAddTransaction::batch_add_transaction(ctx, args)
     }
 
