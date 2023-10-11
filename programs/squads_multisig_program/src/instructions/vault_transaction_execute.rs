@@ -46,6 +46,7 @@ pub struct VaultTransactionExecute<'info> {
 }
 
 impl VaultTransactionExecute<'_> {
+    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -65,16 +66,16 @@ impl VaultTransactionExecute<'_> {
         );
 
         // proposal
-        // #[verify_ignore]
-        // match proposal.status {
-        //     ProposalStatus::Approved { timestamp } => {
-        //         require!(
-        //             Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
-        //             MultisigError::TimeLockNotReleased
-        //         );
-        //     }
-        //     _ => return err!(MultisigError::InvalidProposalStatus),
-        // }
+        #[verify_ignore]
+        match proposal.status {
+            ProposalStatus::Approved { timestamp } => {
+                require!(
+                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    MultisigError::TimeLockNotReleased
+                );
+            }
+            _ => return err!(MultisigError::InvalidProposalStatus),
+        }
         // Stale vault transaction proposals CAN be executed if they were approved
         // before becoming stale, hence no check for staleness here.
 
