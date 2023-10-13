@@ -139,6 +139,7 @@ impl BatchExecuteTransaction<'_> {
 
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(batch_key, &transaction.ephemeral_signer_bumps);
+
         let executable_message = ExecutableTransactionMessage::new_validated(
             transaction_message,
             message_account_infos,

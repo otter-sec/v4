@@ -1,8 +1,9 @@
+use anchor_lang::prelude::*;
+
 use crate::errors::*;
 use crate::id;
 use crate::state::*;
 use crate::utils::*;
-use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct ConfigTransactionExecute<'info> {
