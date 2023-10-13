@@ -326,7 +326,7 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::NoAction => acc,
     });
 
-    let abs_membesrs_delta =
+    let abs_members_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
 
     if members_delta.is_negative() {
