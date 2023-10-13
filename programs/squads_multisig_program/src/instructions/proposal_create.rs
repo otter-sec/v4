@@ -1,6 +1,7 @@
+use anchor_lang::prelude::*;
+
 use crate::errors::*;
 use crate::state::*;
-use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProposalCreateArgs {
