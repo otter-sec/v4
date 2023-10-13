@@ -22,7 +22,6 @@ pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
     && self.stale_transaction_index <= self.transaction_index
     && self.time_lock <= MAX_TIME_LOCK
 )]
-#[derive(Clone)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,

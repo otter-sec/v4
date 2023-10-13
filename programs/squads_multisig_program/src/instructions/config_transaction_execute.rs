@@ -326,17 +326,14 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::NoAction => acc,
     });
 
-    kani::assume(members_delta.checked_abs().is_some());
-    let abs_members_delta =
+    let abs_membesrs_delta =
         usize::try_from(members_delta.checked_abs().expect("overflow")).expect("overflow");
 
     if members_delta.is_negative() {
-        kani::assume(members_length.checked_sub(abs_members_delta).is_some());
         members_length
             .checked_sub(abs_members_delta)
             .expect("overflow")
     } else {
-        kani::assume(members_length.checked_add(abs_members_delta).is_some());
         members_length
             .checked_add(abs_members_delta)
             .expect("overflow")
