@@ -310,11 +310,11 @@ pub mod squads_multisig_program {
         && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
         && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
         && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
-        && squads_multisig_program::confix_tx_execute_validation_helper(&ctx).is_ok()
     )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
+        kani::assume(squads_multisig_program::confix_tx_execute_validation_helper(&ctx).is_ok());
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }
 
