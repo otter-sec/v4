@@ -146,7 +146,6 @@ impl<'info> ConfigTransactionExecute<'info> {
                 }
 
                 ConfigAction::RemoveMember { old_member } => {
-                    kani::assume(multisig.is_member(*old_member).is_some());
                     multisig.remove_member(old_member.to_owned())?;
 
                     multisig.invalidate_prior_transactions();
