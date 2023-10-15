@@ -11,7 +11,7 @@ pub struct VaultTransactionCreateArgs {
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
     pub transaction_message: Vec<u8>,
-    // pub memo: Option<String>,
+    pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

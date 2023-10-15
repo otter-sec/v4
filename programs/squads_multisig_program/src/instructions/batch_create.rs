@@ -7,7 +7,7 @@ use crate::state::*;
 pub struct BatchCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
-    // pub memo: Option<String>,
+    pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

@@ -13,7 +13,7 @@ pub struct SpendingLimitUseArgs {
     /// Decimals of the token mint. Used for double-checking against incorrect order of magnitude of `amount`.
     pub decimals: u8,
     // Memo used for indexing.
-    // pub memo: Option<String>,
+    pub memo: Option<String>,
 }
 
 #[derive(Accounts)]

@@ -6,7 +6,7 @@ use crate::state::*;
 #[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigRemoveSpendingLimitArgs {
     // Memo is used for indexing only.
-    // pub memo: Option<String>,
+    pub memo: Option<String>,
 }
 
 #[derive(Accounts)]
