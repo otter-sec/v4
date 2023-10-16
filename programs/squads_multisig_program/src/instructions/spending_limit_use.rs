@@ -155,28 +155,24 @@ impl SpendingLimitUse<'_> {
 
         // Reset `spending_limit.remaining_amount` if the `spending_limit.period` has passed.
         if let Some(reset_period) = spending_limit.period.to_seconds() {
-            // NOTE: Ensure no overflow for verification
-            kani::assume(now > spending_limit.last_reset);
-            let passed_since_last_reset = now.checked_sub(spending_limit.last_reset).unwrap();
+            let passed_since_last_reset = now
+                .checked_sub(spending_limit.last_reset)
+                .ok_or(MultisigError::Overflow)?;
 
             if passed_since_last_reset > reset_period {
                 spending_limit.remaining_amount = spending_limit.amount;
 
                 let periods_passed = passed_since_last_reset.checked_div(reset_period).unwrap();
 
-                // NOTE: Ensure no overflow for verifiaction
-                kani::assume(periods_passed.checked_mul(reset_period).is_some());
-                kani::assume(
-                    spending_limit
-                        .last_reset
-                        .checked_add(periods_passed.checked_mul(reset_period).unwrap())
-                        .is_some(),
-                );
                 // last_reset = last_reset + periods_passed * reset_period,
                 spending_limit.last_reset = spending_limit
                     .last_reset
-                    .checked_add(periods_passed.checked_mul(reset_period).unwrap())
-                    .unwrap();
+                    .checked_add(
+                        periods_passed
+                            .checked_mul(reset_period)
+                            .ok_or(MultisigError::Overflow)?,
+                    )
+                    .ok_or(MultisigError::Overflow)?;
             }
         }
 
