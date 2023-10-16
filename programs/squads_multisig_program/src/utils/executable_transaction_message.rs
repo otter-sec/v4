@@ -128,11 +128,8 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         let mut message_indexes_cursor = message.account_keys.len();
         for lookup in message.address_table_lookups.iter() {
             // This is cheap deserialization, it doesn't allocate/clone space for addresses.
-            let lookup_table_data = &mut &lookup_tables
-                .get(&lookup.account_key)
-                .unwrap()
-                .data
-                .borrow()[..];
+            let lookup_table_data =
+                &mut &lookup_tables.get(lookup.account_key).unwrap().data.borrow()[..];
             let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
                 .map_err(|_| MultisigError::InvalidAccount)?;
 
