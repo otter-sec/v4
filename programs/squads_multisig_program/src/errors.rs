@@ -64,4 +64,6 @@ pub enum MultisigError {
     ProtectedAccount,
     //#[msg("Time lock exceeds the maximum allowed (90 days)")]
     TimeLockExceedsMaxAllowed,
+    //#[msg("Overflow")]
+    Overflow,
 }
