@@ -139,7 +139,7 @@ impl BatchAddTransaction<'_> {
         // transaction.message = transaction_message.try_into()?;
 
         // Increment the batch size.
-        batch.size = batch.size.checked_add(1).expect("overflow");
+        batch.size = batch.size.checked_add(1).ok_or(MultisigError::Overflow)?;
 
         // Logs for indexing.
         msg!("batch index: {}", batch.index);

@@ -169,13 +169,12 @@ pub mod squads_multisig_program {
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
-    ) -> Result<()> {
-        #[cfg(any(kani, feature="kani"))]{
-        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX);
-        }
+    ) -> Result<()> {   
         ConfigTransactionCreate::config_transaction_create(ctx, args)
     }
+
     /// Used in `config_transaction_execute` function's verification
+    #[cfg(any(kani, feature = "kani"))]
     pub fn confix_tx_execute_validation_helper<'info>(
         ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
@@ -326,13 +325,13 @@ pub mod squads_multisig_program {
     /// Create a new vault transaction.
     #[succeeds_if(
         ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.multisig.transaction_index < u64::MAX
     )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
         #[cfg(any(kani, feature="kani"))]{
-        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
         kani::assume(args.ephemeral_signers <= 10);
         }
         VaultTransactionCreate::vault_transaction_create(ctx, args)
@@ -356,11 +355,9 @@ pub mod squads_multisig_program {
     /// Create a new batch.
     #[succeeds_if(
         ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.multisig.transaction_index < u64::MAX
     )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
-        #[cfg(any(kani, feature="kani"))]{
-        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX - 1);
-        }
         BatchCreate::batch_create(ctx, args)
     }
 
@@ -373,13 +370,13 @@ pub mod squads_multisig_program {
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
         && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
+        && ctx.accounts.batch.size < u32::MAX
      )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
         #[cfg(any(kani, feature="kani"))]{
-        kani::assume(ctx.accounts.batch.size < u32::MAX);
         kani::assume(args.ephemeral_signers <= 10);
         }
         BatchAddTransaction::batch_add_transaction(ctx, args)
@@ -466,6 +463,7 @@ pub mod squads_multisig_program {
     pub fn proposal_cancel(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_cancel(ctx, args)
     }
+    
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
     #[succeeds_if(
         ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()

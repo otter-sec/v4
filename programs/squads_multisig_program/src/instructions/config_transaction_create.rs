@@ -95,7 +95,10 @@ impl ConfigTransactionCreate<'_> {
         let multisig_key = multisig.key();
 
         // Increment the transaction index.
-        let transaction_index = multisig.transaction_index.checked_add(1).unwrap();
+        let transaction_index = multisig
+            .transaction_index
+            .checked_add(1)
+            .ok_or(MultisigError::Overflow)?;
 
         // Initialize the transaction fields.
         transaction.multisig = multisig_key;

@@ -73,7 +73,10 @@ impl BatchCreate<'_> {
         let multisig_key = multisig.key();
 
         // Increment the transaction index.
-        let index = multisig.transaction_index.checked_add(1).expect("overflow");
+        let index = multisig
+            .transaction_index
+            .checked_add(1)
+            .ok_or(MultisigError::Overflow)?;
 
         let vault_seeds = &[
             SEED_PREFIX,
