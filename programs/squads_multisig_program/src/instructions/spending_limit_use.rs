@@ -117,9 +117,8 @@ impl SpendingLimitUse<'_> {
             require!(mint.is_none(), MultisigError::InvalidMint);
         } else {
             // SpendingLimit is for an SPL token, `mint` must match `spending_limit.mint`.
-            kani::assume(mint.is_some());
             require!(
-                spending_limit.mint == mint.as_ref().unwrap().key(),
+                spending_limit.mint == mint.as_ref().ok_or(MultisigError::InvalidMint)?.key(),
                 MultisigError::InvalidMint
             );
         }
