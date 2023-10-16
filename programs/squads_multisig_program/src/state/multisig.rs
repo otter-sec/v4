@@ -230,9 +230,10 @@ impl Multisig {
     }
 
     /// Add `new_member` to the multisig `members` vec and sort the vec.
+    #[helper_fn]
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
-        #[cfg(not(any(kani, feature = "kani")))]
+        #[verify_ignore]
         self.members.sort_by_key(|m| m.key);
     }
 
