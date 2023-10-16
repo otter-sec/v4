@@ -235,8 +235,10 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
+                    #[cfg(any(kani, feature = "kani"))]
                     kani::assume(members.windows(2).all(|w| w[0] < w[1]));
-                    // members.sort();
+                    #[cfg(not(any(kani, feature = "kani")))]
+                    members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
@@ -304,12 +306,6 @@ impl<'info> ConfigTransactionExecute<'info> {
                 .expect("didn't expect more than `u16::MAX` members");
         };
 
-        kani::assume(
-            multisig
-                .members
-                .windows(2)
-                .all(|win| win[0].key < win[1].key),
-        );
         // Make sure the multisig state is valid after applying the actions.
         multisig.invariant()?;
 

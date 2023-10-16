@@ -80,7 +80,6 @@ impl VaultTransactionCreate<'_> {
 
         let transaction_message =
             TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
-        
 
         let multisig_key = multisig.key();
         let transaction_key = transaction.key();
@@ -120,7 +119,6 @@ impl VaultTransactionCreate<'_> {
         transaction.vault_bump = vault_bump;
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
         transaction.message = transaction_message.try_into()?;
-        
 
         // Updated last transaction index in the multisig account.
         multisig.transaction_index = transaction_index;

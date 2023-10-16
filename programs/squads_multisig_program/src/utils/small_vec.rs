@@ -13,7 +13,7 @@ impl<L, T> SmallVec<L, T> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -79,9 +79,9 @@ where
         Ok(SmallVec(vec, PhantomData))
     }
 
-    // TODO need to finish this
+    #[cfg(any(kani, feature = "kani"))]
     fn deserialize_reader<R: std::io::Read>(_reader: &mut R) -> std::io::Result<Self> {
-        todo!()
+        Ok(SmallVec(Vec::new(), PhantomData))
     }
 }
 
