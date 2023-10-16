@@ -115,11 +115,8 @@ impl BatchAddTransaction<'_> {
 
         let batch_key = batch.key();
 
-        #[cfg(not(any(kani, feature = "kani")))]
-        {
-            let transaction_message =
-                TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
-        }
+        let transaction_message =
+            TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
 
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
             .map(|ephemeral_signer_index| {
@@ -139,10 +136,8 @@ impl BatchAddTransaction<'_> {
 
         transaction.bump = *ctx.bumps.get("transaction").unwrap();
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
-        #[cfg(not(any(kani, feature = "kani")))]
-        {
-            transaction.message = transaction_message.try_into()?;
-        }
+        transaction.message = transaction_message.try_into()?;
+
         // Increment the batch size.
         batch.size = batch.size.checked_add(1).ok_or(MultisigError::Overflow)?;
 

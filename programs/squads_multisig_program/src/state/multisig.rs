@@ -112,7 +112,9 @@ impl Multisig {
         AccountInfo::realloc(&multisig, new_size, false)?;
 
         // If more lamports are needed, transfer them to the account.
-        // let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        #[cfg(not(any(kani, feature = "kani")))]
+        let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        #[cfg(any(kani, feature = "kani"))]
         let rent_exempt_lamports = kani::any::<u64>().max(1);
         let top_up_lamports =
             rent_exempt_lamports.saturating_sub(multisig.to_account_info().lamports());
@@ -228,10 +230,9 @@ impl Multisig {
     }
 
     /// Add `new_member` to the multisig `members` vec and sort the vec.
-    #[helper_fn]
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
-        #[verify_ignore]
+        #[cfg(not(any(kani, feature = "kani")))]
         self.members.sort_by_key(|m| m.key);
     }
 

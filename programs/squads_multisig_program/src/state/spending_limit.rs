@@ -54,6 +54,7 @@ pub struct SpendingLimit {
     pub destinations: Vec<Pubkey>,
 }
 
+#[cfg(any(kani, feature = "kani"))]
 impl Owner for SpendingLimit {
     fn owner() -> Pubkey {
         kani::any()
