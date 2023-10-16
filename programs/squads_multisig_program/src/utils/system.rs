@@ -11,7 +11,14 @@ pub fn create_account<'a, 'info>(
     space: usize,
     seeds: Vec<Vec<u8>>,
 ) -> Result<()> {
-    let current_lamports = new_account.try_borrow_lamports()?;
+    #[cfg(any(kani, feature = "kani"))]
+    {
+        let current_lamports = new_account.try_borrow_lamports()?;
+    }
+    #[cfg(not(any(kani, feature = "kani")))]
+    {
+        let current_lamports = **new_account.try_borrow_lamports()?;
+    }
 
     if current_lamports == 0 {
         // If the account has no lamports, we create it with system program's create_account instruction.
