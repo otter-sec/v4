@@ -387,6 +387,7 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         for (ix, account_infos) in self.to_instructions_and_accounts().iter() {
             // Make sure we don't pass protected accounts as writable to CPI calls.
             for account_meta in ix.accounts.iter().filter(|m| m.is_writable) {
+                #[cfg(any(kani, feature = "kani"))]
                 kani::assume(!protected_accounts.contains(&account_meta.pubkey));
                 require!(
                     !protected_accounts.contains(&account_meta.pubkey),
