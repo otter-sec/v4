@@ -8,8 +8,10 @@ use crate::{TransactionMessage, VaultTransactionMessage};
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 /// The transactions themselves are stored in separate PDAs associated with the this account.
 #[account]
-#[invariant(
-    self.size >= self.executed_transaction_index
+#[cfg_attr(any(kani, feature = "kani"), 
+    invariant(
+        self.size >= self.executed_transaction_index
+    )
 )]
 #[derive(InitSpace)]
 pub struct Batch {
@@ -43,7 +45,7 @@ impl Batch {
 
 /// Stores data required for execution of one transaction from a batch.
 #[account]
-#[invariant()]
+#[cfg_attr(any(kani, feature = "kani"), invariant())]
 pub struct VaultBatchTransaction {
     /// PDA bump.
     pub bump: u8,

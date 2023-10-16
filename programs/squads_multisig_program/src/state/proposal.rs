@@ -6,7 +6,7 @@ use crate::errors::*;
 /// Each `Proposal` has a 1:1 association with a transaction account, e.g. a `VaultTransaction` or a `ConfigTransaction`;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.
 #[account]
-#[invariant()]
+#[cfg_attr(any(kani, feature = "kani"), invariant())]
 pub struct Proposal {
     /// The multisig this belongs to.
     pub multisig: Pubkey,

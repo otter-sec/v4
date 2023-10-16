@@ -8,19 +8,21 @@ use crate::errors::*;
 pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 
 #[account]
-#[invariant(
-    !self.members.is_empty()
-    && self.members.len() <= usize::from(u16::MAX)
-    && self.threshold <= self.members.len() as u16
-    && self.threshold > 0
-    && !self.members.windows(2).any(|win| win[0].key == win[1].key)
-    && self.members.iter().all(|m| m.permissions.mask < 8)
-    && Self::num_proposers(&self.members) > 0
-    && Self::num_executors(&self.members) > 0
-    && Self::num_voters(&self.members) > 0
-    && usize::from(self.threshold) <= Self::num_voters(&self.members)
-    && self.stale_transaction_index <= self.transaction_index
-    && self.time_lock <= MAX_TIME_LOCK
+#[cfg_attr(any(kani, feature = "kani"), 
+    invariant(
+        !self.members.is_empty()
+        && self.members.len() <= usize::from(u16::MAX)
+        && self.threshold <= self.members.len() as u16
+        && self.threshold > 0
+        && !self.members.windows(2).any(|win| win[0].key == win[1].key)
+        && self.members.iter().all(|m| m.permissions.mask < 8)
+        && Self::num_proposers(&self.members) > 0
+        && Self::num_executors(&self.members) > 0
+        && Self::num_voters(&self.members) > 0
+        && usize::from(self.threshold) <= Self::num_voters(&self.members)
+        && self.stale_transaction_index <= self.transaction_index
+        && self.time_lock <= MAX_TIME_LOCK
+    )
 )]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
@@ -230,10 +232,9 @@ impl Multisig {
     }
 
     /// Add `new_member` to the multisig `members` vec and sort the vec.
-    #[helper_fn]
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
-        #[verify_ignore]
+        #[cfg(not(any(kani, feature = "kani")))]
         self.members.sort_by_key(|m| m.key);
     }
 
