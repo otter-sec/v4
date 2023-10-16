@@ -33,7 +33,6 @@ pub fn create_account<'a, 'info>(
             owner_program,
         )
     } else {
-        kani::assume(payer.key() != new_account.key());
         require_keys_neq!(
             payer.key(),
             new_account.key(),

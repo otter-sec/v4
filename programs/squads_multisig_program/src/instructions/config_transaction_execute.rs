@@ -182,13 +182,15 @@ impl<'info> ConfigTransactionExecute<'info> {
                         ctx.program_id,
                     );
 
-                    kani::assume(
-                        ctx.remaining_accounts
-                            .iter()
-                            .find(|acc| acc.key == &spending_limit_key)
-                            .is_some(),
-                    );
-
+                    #[cfg(any(kani, feature = "kani"))]
+                    {
+                        kani::assume(
+                            ctx.remaining_accounts
+                                .iter()
+                                .find(|acc| acc.key == &spending_limit_key)
+                                .is_some(),
+                        );
+                    }
                     // Find the SpendingLimit account in `remaining_accounts`.
                     let spending_limit_info = ctx
                         .remaining_accounts
@@ -209,6 +211,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                         .ok_or(MultisigError::MissingAccount)?;
 
                     // Initialize the SpendingLimit account.
+                    #[cfg(any(kani, feature = "kani"))]
+                    {
+                        kani::assume(
+                            spending_limit_info.try_borrow_lamports()? == 0
+                                || rent_payer.key() != spending_limit_info.key(),
+                        );
+                    }
                     create_account(
                         rent_payer,
                         spending_limit_info,
