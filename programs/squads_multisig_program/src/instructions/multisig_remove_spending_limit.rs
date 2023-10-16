@@ -6,7 +6,7 @@ use crate::state::*;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigRemoveSpendingLimitArgs {
-    // Memo is used for indexing only.
+    /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 

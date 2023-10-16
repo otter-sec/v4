@@ -26,7 +26,7 @@ pub struct MultisigAddSpendingLimitArgs {
     /// The destination addresses the spending limit is allowed to sent funds to.
     /// If empty, funds can be sent to any address.
     pub destinations: Vec<Pubkey>,
-    // Memo is used for indexing only.
+    /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
