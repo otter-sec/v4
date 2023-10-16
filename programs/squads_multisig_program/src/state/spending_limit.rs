@@ -91,7 +91,8 @@ impl SpendingLimit {
 }
 
 /// The reset period of the spending limit.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub enum Period {
     /// The spending limit can only be used once.
     OneTime,

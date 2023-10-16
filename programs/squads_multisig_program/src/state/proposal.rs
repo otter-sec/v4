@@ -126,7 +126,8 @@ impl Proposal {
 
 /// The status of a proposal.
 /// Each variant wraps a timestamp of when the status was set.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 #[non_exhaustive]
 pub enum ProposalStatus {
     /// Proposal is in the draft mode and can be voted on.

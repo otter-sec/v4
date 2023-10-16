@@ -251,9 +251,8 @@ impl Multisig {
     }
 }
 
-#[derive(
-    AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone, Default, Arbitrary, Copy,
-)]
+#[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone, Default, Copy)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct Member {
     pub key: Pubkey,
     pub permissions: Permissions,
@@ -268,17 +267,9 @@ pub enum Permission {
 
 /// Bitmask for permissions.
 #[derive(
-    AnchorSerialize,
-    AnchorDeserialize,
-    InitSpace,
-    Eq,
-    PartialEq,
-    Clone,
-    Copy,
-    Default,
-    Debug,
-    Arbitrary,
+    AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug,
 )]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct Permissions {
     pub mask: u8,
 }

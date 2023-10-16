@@ -3,7 +3,8 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct BatchCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,

@@ -3,35 +3,40 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigAddMemberArgs {
     pub new_member: Member,
     // Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigRemoveMemberArgs {
     pub old_member: Pubkey,
     // Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigChangeThresholdArgs {
     pub new_threshold: u16,
     // Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigSetTimeLockArgs {
     pub time_lock: u32,
     // Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigSetConfigAuthorityArgs {
     pub config_authority: Pubkey,
     // Memo is used for indexing only.

@@ -57,7 +57,8 @@ impl VaultTransaction {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct VaultTransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -194,7 +195,8 @@ impl TryFrom<TransactionMessage> for VaultTransactionMessage {
 
 /// Concise serialization schema for instructions that make up a transaction.
 /// Closely mimics the Solana transaction wire format.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigCompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -215,7 +217,8 @@ impl From<CompiledInstruction> for MultisigCompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts into a transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Arbitrary, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigMessageAddressTableLookup {
     /// Address lookup table account key.
     pub account_key: Pubkey,

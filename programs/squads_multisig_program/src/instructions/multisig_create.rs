@@ -2,7 +2,8 @@ use anchor_lang::prelude::*;
 
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigCreateArgs {
     /// The authority that can configure the multisig: add/remove members, change the threshold, etc.
     /// Should be set to `None` for autonomous multisigs.

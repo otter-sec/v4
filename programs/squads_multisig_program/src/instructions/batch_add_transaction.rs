@@ -4,7 +4,8 @@ use crate::errors::*;
 use crate::state::*;
 use crate::TransactionMessage;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct BatchAddTransactionArgs {
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,

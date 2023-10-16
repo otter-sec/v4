@@ -4,7 +4,8 @@ use crate::errors::*;
 use crate::state::*;
 use crate::utils::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,

@@ -46,7 +46,8 @@ impl ConfigTransaction {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Arbitrary, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 #[non_exhaustive]
 pub enum ConfigAction {
     /// Add a new member to the multisig.
