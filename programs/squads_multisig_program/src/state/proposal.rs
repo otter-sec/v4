@@ -7,9 +7,9 @@ use crate::errors::*;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.
 #[account]
 #[cfg_attr(any(kani, feature = "kani"), invariant(
-    self.approved.windows(2).all(|win| win[0] < win[1])
-    && self.rejected.windows(2).all(|win| win[0] < win[1])
-    && self.cancelled.windows(2).all(|win| win[0] < win[1])
+    !self.approved.windows(2).any(|win| win[0] == win[1])
+    && !self.rejected.windows(2).any(|win| win[0] == win[1])
+    && !self.cancelled.windows(2).any(|win| win[0] == win[1])
     && self.approved.iter().all(|pubkey| !self.rejected.contains(pubkey))
     && (self.cancelled.is_empty() 
         || (matches!(self.status, ProposalStatus::Approved { .. }) 
