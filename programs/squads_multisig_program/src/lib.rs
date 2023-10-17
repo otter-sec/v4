@@ -175,7 +175,7 @@ pub mod squads_multisig_program {
 
     /// Used in `config_transaction_execute` function's verification
     #[cfg(any(kani, feature = "kani"))]
-    pub fn confix_tx_execute_validation_helper<'info>(
+    fn confix_tx_execute_validation_helper<'info>(
         ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
         kani::assume(ctx.accounts.transaction.actions.len() <= 3);
@@ -311,13 +311,17 @@ pub mod squads_multisig_program {
         && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
         && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
         && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
-        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        &&  if let ProposalStatus::Approved { timestamp } = ctx.accounts.proposal.status {
+            Clock::get().unwrap().unix_timestamp.checked_sub(timestamp).map_or(false, |result| result >= i64::from(ctx.accounts.multisig.time_lock))
+        } else {
+            false
+        }
     )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
         #[cfg(any(kani, feature="kani"))]{
-            kani::assume(squads_multisig_program::confix_tx_execute_validation_helper(&ctx).is_ok());
+            kani::assume(confix_tx_execute_validation_helper(&ctx).is_ok());
         }
         ConfigTransactionExecute::config_transaction_execute(ctx)
     }
@@ -342,7 +346,11 @@ pub mod squads_multisig_program {
     /// The transaction must be `Approved`.
     #[succeeds_if(
         ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
-        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        &&  if let ProposalStatus::Approved { timestamp } = ctx.accounts.proposal.status {
+                Clock::get().unwrap().unix_timestamp.checked_sub(timestamp).map_or(false, |result| result >= i64::from(ctx.accounts.multisig.time_lock))
+            } else {
+                false
+            }
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.transaction.multisig
         && ctx.accounts.proposal.transaction_index == ctx.accounts.transaction.index
@@ -387,7 +395,11 @@ pub mod squads_multisig_program {
     /// Execute a transaction from the batch.
     #[succeeds_if(
         ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
-        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        &&  if let ProposalStatus::Approved { timestamp } = ctx.accounts.proposal.status {
+            Clock::get().unwrap().unix_timestamp.checked_sub(timestamp).map_or(false, |result| result >= i64::from(ctx.accounts.multisig.time_lock))
+            } else {
+                false
+            }
         && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
         && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
         && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index

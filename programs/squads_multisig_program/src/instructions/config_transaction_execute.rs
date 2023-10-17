@@ -59,7 +59,6 @@ pub struct ConfigTransactionExecute<'info> {
 }
 
 impl<'info> ConfigTransactionExecute<'info> {
-    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -79,16 +78,19 @@ impl<'info> ConfigTransactionExecute<'info> {
         );
 
         // proposal
-        #[verify_ignore]
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    Clock::get()?
+                        .unix_timestamp
+                        .checked_sub(timestamp)
+                        .ok_or(MultisigError::Overflow)?
+                        >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
             _ => return err!(MultisigError::InvalidProposalStatus),
-        }
+        };
         // Stale config transaction proposals CANNOT be executed even if approved.
         require!(
             proposal.transaction_index > multisig.stale_transaction_index,

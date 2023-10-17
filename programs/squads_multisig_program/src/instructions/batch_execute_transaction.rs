@@ -64,7 +64,6 @@ pub struct BatchExecuteTransaction<'info> {
 }
 
 impl BatchExecuteTransaction<'_> {
-    #[helper_fn]
     fn validate(&self) -> Result<()> {
         let Self {
             multisig,
@@ -84,11 +83,14 @@ impl BatchExecuteTransaction<'_> {
         );
 
         // `proposal`
-        #[verify_ignore]
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    Clock::get()?
+                        .unix_timestamp
+                        .checked_sub(timestamp)
+                        .ok_or(MultisigError::Overflow)?
+                        >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
