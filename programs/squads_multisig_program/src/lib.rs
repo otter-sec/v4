@@ -314,6 +314,7 @@ pub mod squads_multisig_program {
         } else {
             false
         }
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.transaction.index
     )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
