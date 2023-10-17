@@ -58,7 +58,7 @@ pub mod squads_multisig_program {
 
     /// Add a new member to the controlled multisig.
     #[succeeds_if(
-        ctx.accounts.multisig.members.len() <= usize::from(u16::MAX-1)
+        ctx.accounts.multisig.members.len() < usize::from(u16::MAX)
         && ctx.accounts.multisig.members.iter().all(|m| m.key != args.new_member.key)
         && ctx.accounts.system_program.is_some()
         && ctx.accounts.rent_payer.is_some()
@@ -74,14 +74,12 @@ pub mod squads_multisig_program {
 
     /// Remove a member/key from the controlled multisig.
     #[succeeds_if(
-        ctx.accounts.multisig.members.len() > 1
-        && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
+        ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
         && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Execute))
         && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Initiate))
         && ctx.accounts.multisig.members.iter().filter(|m| m.key != args.old_member && m.permissions.has(Permission::Vote)).count() 
             >= ctx.accounts.multisig.threshold as usize
         && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
-        && ctx.accounts.multisig.is_member(args.old_member).is_some()
         && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
     )]
     pub fn multisig_remove_member(

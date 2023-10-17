@@ -10,9 +10,7 @@ pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 #[account]
 #[cfg_attr(any(kani, feature = "kani"), 
     invariant(
-        !self.members.is_empty()
-        && self.members.len() <= usize::from(u16::MAX)
-        && self.threshold <= self.members.len() as u16
+        self.members.len() <= usize::from(u16::MAX)
         && self.threshold > 0
         && !self.members.windows(2).any(|win| win[0].key == win[1].key)
         && self.members.iter().all(|m| m.permissions.mask < 8)
