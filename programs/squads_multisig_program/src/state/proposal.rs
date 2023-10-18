@@ -11,10 +11,6 @@ use crate::errors::*;
     && self.rejected.iter().enumerate().all(|(i, &x)| !self.rejected[..i].contains(&x))
     && self.cancelled.iter().enumerate().all(|(i, &x)| !self.cancelled[..i].contains(&x))
     && self.approved.iter().all(|pubkey| !self.rejected.contains(pubkey))
-    && (self.cancelled.is_empty() 
-        || (matches!(self.status, ProposalStatus::Approved { .. }) 
-            || matches!(self.status, ProposalStatus::Cancelled { .. }) )
-        )
 ))]
 pub struct Proposal {
     /// The multisig this belongs to.
