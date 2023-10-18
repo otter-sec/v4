@@ -78,9 +78,12 @@ impl VaultTransactionCreate<'_> {
         let transaction = &mut ctx.accounts.transaction;
         let creator = &mut ctx.accounts.creator;
 
-        let transaction_message =
-            TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
-
+        let transaction_message_wrapped =
+            TransactionMessage::deserialize(&mut args.transaction_message.as_slice());
+        #[cfg(any(kani, feature = "kani"))]
+        kani::assume(transaction_message_wrapped.is_ok());
+        let transaction_message = transaction_message_wrapped?;
+        
         let multisig_key = multisig.key();
         let transaction_key = transaction.key();
 

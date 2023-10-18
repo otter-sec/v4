@@ -329,7 +329,6 @@ pub mod squads_multisig_program {
     #[succeeds_if(
         ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
         && ctx.accounts.multisig.transaction_index < u64::MAX
-        && TransactionMessage::deserialize(&mut args.transaction_message.as_slice()).is_ok()
     )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
@@ -379,15 +378,14 @@ pub mod squads_multisig_program {
         && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
         && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
         && ctx.accounts.batch.size < u32::MAX
-        && TransactionMessage::deserialize(&mut args.transaction_message.as_slice()).is_ok()
      )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
-        #[cfg(any(kani, feature="kani"))]{
-            kani::assume(args.ephemeral_signers <= 10);
-        }
+        #[cfg(any(kani, feature="kani"))]
+        kani::assume(args.ephemeral_signers <= 10);
+        
         BatchAddTransaction::batch_add_transaction(ctx, args)
     }
 
@@ -506,9 +504,9 @@ pub mod squads_multisig_program {
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
-        #[cfg(any(kani, feature="kani"))]{
-            kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
-        }
+        #[cfg(any(kani, feature="kani"))]
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
+        
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 }

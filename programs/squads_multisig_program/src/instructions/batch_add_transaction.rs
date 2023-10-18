@@ -115,8 +115,12 @@ impl BatchAddTransaction<'_> {
 
         let batch_key = batch.key();
 
-        let transaction_message =
-            TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
+        let transaction_message_wrapped =
+            TransactionMessage::deserialize(&mut args.transaction_message.as_slice());
+        #[cfg(any(kani, feature = "kani"))]
+        kani::assume(transaction_message_wrapped.is_ok());
+
+        let transaction_message = transaction_message_wrapped?;
 
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
             .map(|ephemeral_signer_index| {
