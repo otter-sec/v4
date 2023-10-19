@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigRemoveSpendingLimitArgs {
     /// Memo is used for indexing only.
     pub memo: Option<String>,
@@ -15,7 +16,7 @@ pub struct MultisigRemoveSpendingLimit<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,

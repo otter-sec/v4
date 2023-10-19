@@ -5,6 +5,7 @@ use crate::state::*;
 use crate::TransactionMessage;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct BatchAddTransactionArgs {
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
@@ -114,8 +115,11 @@ impl BatchAddTransaction<'_> {
 
         let batch_key = batch.key();
 
-        let transaction_message =
-            TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
+        #[cfg(not(any(kani, feature = "kani")))]
+        {
+            let transaction_message =
+                TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
+        }
 
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
             .map(|ephemeral_signer_index| {
@@ -135,10 +139,13 @@ impl BatchAddTransaction<'_> {
 
         transaction.bump = *ctx.bumps.get("transaction").unwrap();
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
-        transaction.message = transaction_message.try_into()?;
+        #[cfg(not(any(kani, feature = "kani")))]
+        {
+            transaction.message = transaction_message.try_into()?;
+        }
 
         // Increment the batch size.
-        batch.size = batch.size.checked_add(1).expect("overflow");
+        batch.size = batch.size.checked_add(1).ok_or(MultisigError::Overflow)?;
 
         // Logs for indexing.
         msg!("batch index: {}", batch.index);

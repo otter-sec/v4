@@ -13,7 +13,7 @@ impl<L, T> SmallVec<L, T> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -56,7 +56,7 @@ impl<T: AnchorSerialize> AnchorSerialize for SmallVec<u16, T> {
 impl<L, T> AnchorDeserialize for SmallVec<L, T>
 where
     L: AnchorDeserialize + Into<u32>,
-    T: AnchorDeserialize,
+    T: AnchorDeserialize + Default,
 {
     /// This implementation almost exactly matches standard implementation of
     /// `Vec<T>::deserialize` except that it uses `L` instead of `u32` for the length,
@@ -66,10 +66,10 @@ where
 
         let vec = if len == 0 {
             Vec::new()
-        } else if let Some(vec_bytes) = T::vec_from_bytes(len, input)? {
-            vec_bytes
+        // } else if let Some(vec_bytes) = T::vec_from_bytes(len, input)? {
+        //     vec_bytes
         } else {
-            let mut result = Vec::with_capacity(hint::cautious::<T>(len));
+            let mut result = Vec::new();
             for _ in 0..len {
                 result.push(T::deserialize(input)?);
             }
@@ -77,6 +77,11 @@ where
         };
 
         Ok(SmallVec(vec, PhantomData))
+    }
+
+    #[cfg(any(kani, feature = "kani"))]
+    fn deserialize_reader<R: std::io::Read>(_reader: &mut R) -> std::io::Result<Self> {
+        Ok(SmallVec(Vec::new(), PhantomData))
     }
 }
 

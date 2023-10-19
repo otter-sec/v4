@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigAddMemberArgs {
     pub new_member: Member,
     /// Memo is used for indexing only.
@@ -11,6 +12,7 @@ pub struct MultisigAddMemberArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigRemoveMemberArgs {
     pub old_member: Pubkey,
     /// Memo is used for indexing only.
@@ -18,6 +20,7 @@ pub struct MultisigRemoveMemberArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigChangeThresholdArgs {
     pub new_threshold: u16,
     /// Memo is used for indexing only.
@@ -25,6 +28,7 @@ pub struct MultisigChangeThresholdArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigSetTimeLockArgs {
     pub time_lock: u32,
     /// Memo is used for indexing only.
@@ -32,6 +36,7 @@ pub struct MultisigSetTimeLockArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigSetConfigAuthorityArgs {
     pub config_authority: Pubkey,
     /// Memo is used for indexing only.
@@ -45,7 +50,7 @@ pub struct MultisigConfig<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,

@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct ProposalCreateArgs {
     /// Index of the multisig transaction this proposal is associated with.
     pub transaction_index: u64,
@@ -102,9 +103,9 @@ impl ProposalCreate<'_> {
             }
         };
         proposal.bump = *ctx.bumps.get("proposal").unwrap();
-        proposal.approved = vec![];
-        proposal.rejected = vec![];
-        proposal.cancelled = vec![];
+        proposal.approved = Vec::new();
+        proposal.rejected = Vec::new();
+        proposal.cancelled = Vec::new();
 
         Ok(())
     }

@@ -81,12 +81,16 @@ impl<'info> ConfigTransactionExecute<'info> {
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    Clock::get()?
+                        .unix_timestamp
+                        .checked_sub(timestamp)
+                        .ok_or(MultisigError::Overflow)?
+                        >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
             }
             _ => return err!(MultisigError::InvalidProposalStatus),
-        }
+        };
         // Stale config transaction proposals CANNOT be executed even if approved.
         require!(
             proposal.transaction_index > multisig.stale_transaction_index,
@@ -180,6 +184,14 @@ impl<'info> ConfigTransactionExecute<'info> {
                         ctx.program_id,
                     );
 
+                    #[cfg(any(kani, feature = "kani"))]
+                    kani::assume(
+                        ctx.remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == &spending_limit_key)
+                            .is_some(),
+                    );
+
                     // Find the SpendingLimit account in `remaining_accounts`.
                     let spending_limit_info = ctx
                         .remaining_accounts
@@ -200,6 +212,12 @@ impl<'info> ConfigTransactionExecute<'info> {
                         .ok_or(MultisigError::MissingAccount)?;
 
                     // Initialize the SpendingLimit account.
+                    #[cfg(any(kani, feature = "kani"))]
+                    kani::assume(
+                        spending_limit_info.try_borrow_lamports()? == 0
+                            || rent_payer.key() != spending_limit_info.key(),
+                    );
+
                     create_account(
                         rent_payer,
                         spending_limit_info,
@@ -208,16 +226,20 @@ impl<'info> ConfigTransactionExecute<'info> {
                         &rent,
                         SpendingLimit::size(members.len(), destinations.len()),
                         vec![
-                            SEED_PREFIX.to_vec(),
-                            multisig.key().as_ref().to_vec(),
-                            SEED_SPENDING_LIMIT.to_vec(),
-                            create_key.as_ref().to_vec(),
-                            vec![spending_limit_bump],
-                        ],
+                            SEED_PREFIX.to_vec().into(),
+                            multisig.key().as_ref().to_vec().into(),
+                            SEED_SPENDING_LIMIT.to_vec().into(),
+                            create_key.as_ref().to_vec().into(),
+                            vec![spending_limit_bump].into(),
+                        ]
+                        .into(),
                     )?;
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
+                    #[cfg(any(kani, feature = "kani"))]
+                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                    #[cfg(not(any(kani, feature = "kani")))]
                     members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
@@ -231,8 +253,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                         remaining_amount: *amount,
                         last_reset: Clock::get()?.unix_timestamp,
                         bump: spending_limit_bump,
-                        members,
-                        destinations: destinations.to_vec(),
+                        members: members.into(),
+                        destinations: destinations.to_vec().into(),
                     };
 
                     spending_limit.invariant()?;
@@ -272,6 +294,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                     // We don't need to invalidate prior transactions here because adding
                     // a spending limit doesn't affect the consensus parameters of the multisig.
                 }
+                // For no action
+                _ => {}
             }
         }
 
@@ -304,6 +328,7 @@ fn members_length_after_actions(members_length: usize, actions: &[ConfigAction])
         ConfigAction::SetTimeLock { .. } => acc,
         ConfigAction::AddSpendingLimit { .. } => acc,
         ConfigAction::RemoveSpendingLimit { .. } => acc,
+        ConfigAction::NoAction => acc,
     });
 
     let abs_members_delta =

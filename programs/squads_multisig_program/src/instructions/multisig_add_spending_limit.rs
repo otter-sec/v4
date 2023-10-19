@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigAddSpendingLimitArgs {
     /// Key that is used to seed the SpendingLimit PDA.
     pub create_key: Pubkey,
@@ -36,7 +37,7 @@ pub struct MultisigAddSpendingLimit<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,
@@ -97,6 +98,9 @@ impl MultisigAddSpendingLimit<'_> {
         spending_limit.bump = *ctx.bumps.get("spending_limit").unwrap();
         spending_limit.members = args.members;
         spending_limit.destinations = args.destinations;
+
+        /* */
+        spending_limit.invariant()?;
 
         Ok(())
     }

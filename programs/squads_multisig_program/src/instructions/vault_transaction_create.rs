@@ -5,6 +5,7 @@ use crate::state::*;
 use crate::utils::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
@@ -77,9 +78,11 @@ impl VaultTransactionCreate<'_> {
         let transaction = &mut ctx.accounts.transaction;
         let creator = &mut ctx.accounts.creator;
 
+        #[cfg(not(any(kani, feature = "kani")))]{
         let transaction_message =
             TransactionMessage::deserialize(&mut args.transaction_message.as_slice())?;
-
+        }
+        
         let multisig_key = multisig.key();
         let transaction_key = transaction.key();
 
@@ -107,7 +110,7 @@ impl VaultTransactionCreate<'_> {
             .collect();
 
         // Increment the transaction index.
-        let transaction_index = multisig.transaction_index.checked_add(1).unwrap();
+        let transaction_index = multisig.transaction_index.checked_add(1).ok_or(MultisigError::Overflow)?;
 
         // Initialize the transaction fields.
         transaction.multisig = multisig_key;
@@ -117,8 +120,9 @@ impl VaultTransactionCreate<'_> {
         transaction.vault_index = args.vault_index;
         transaction.vault_bump = vault_bump;
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
+        #[cfg(not(any(kani, feature = "kani")))] {
         transaction.message = transaction_message.try_into()?;
-
+        }
         // Updated last transaction index in the multisig account.
         multisig.transaction_index = transaction_index;
 
@@ -132,7 +136,7 @@ impl VaultTransactionCreate<'_> {
 }
 
 /// Unvalidated instruction data, must be treated as untrusted.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct TransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -150,7 +154,7 @@ pub struct TransactionMessage {
 }
 
 // Concise serialization schema for instructions that make up transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct CompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -161,7 +165,7 @@ pub struct CompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts in a single tx.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct MessageAddressTableLookup {
     /// Address lookup table account key
     pub account_key: Pubkey,

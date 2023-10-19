@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct BatchCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
@@ -72,7 +73,10 @@ impl BatchCreate<'_> {
         let multisig_key = multisig.key();
 
         // Increment the transaction index.
-        let index = multisig.transaction_index.checked_add(1).expect("overflow");
+        let index = multisig
+            .transaction_index
+            .checked_add(1)
+            .ok_or(MultisigError::Overflow)?;
 
         let vault_seeds = &[
             SEED_PREFIX,

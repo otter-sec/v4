@@ -3,6 +3,15 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 
 #[account]
+#[cfg_attr(any(kani, feature = "kani"), 
+    invariant(
+        !self.members.is_empty()
+        && !self.members.windows(2).any(|win| win[0] == win[1])
+        && self.last_reset >= 0
+        && self.remaining_amount <= self.amount
+        && self.amount > 0
+    )
+)]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -47,6 +56,13 @@ pub struct SpendingLimit {
     pub destinations: Vec<Pubkey>,
 }
 
+#[cfg(any(kani, feature = "kani"))]
+impl Owner for SpendingLimit {
+    fn owner() -> Pubkey {
+        kani::any()
+    }
+}
+
 impl SpendingLimit {
     pub fn size(members_length: usize, destinations_length: usize) -> usize {
         8  + // anchor discriminator
@@ -72,12 +88,14 @@ impl SpendingLimit {
         let has_duplicates = self.members.windows(2).any(|win| win[0] == win[1]);
         require!(!has_duplicates, MultisigError::DuplicateMember);
 
+        require!(self.amount > 0, MultisigError::DuplicateMember);
         Ok(())
     }
 }
 
 /// The reset period of the spending limit.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub enum Period {
     /// The spending limit can only be used once.
     OneTime,

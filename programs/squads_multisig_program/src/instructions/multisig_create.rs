@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct MultisigCreateArgs {
     /// The authority that can configure the multisig: add/remove members, change the threshold, etc.
     /// Should be set to `None` for autonomous multisigs.
@@ -50,6 +51,7 @@ impl MultisigCreate<'_> {
     pub fn multisig_create(ctx: Context<Self>, args: MultisigCreateArgs) -> Result<()> {
         // Sort the members by pubkey.
         let mut members = args.members;
+        #[cfg(not(any(kani, feature = "kani")))]
         members.sort_by_key(|m| m.key);
 
         // Initialize the multisig.

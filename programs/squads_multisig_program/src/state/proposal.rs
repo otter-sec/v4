@@ -6,6 +6,12 @@ use crate::errors::*;
 /// Each `Proposal` has a 1:1 association with a transaction account, e.g. a `VaultTransaction` or a `ConfigTransaction`;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.
 #[account]
+#[cfg_attr(any(kani, feature = "kani"), invariant(
+    self.approved.iter().enumerate().all(|(i, &x)| !self.approved[..i].contains(&x))
+    && self.rejected.iter().enumerate().all(|(i, &x)| !self.rejected[..i].contains(&x))
+    && self.cancelled.iter().enumerate().all(|(i, &x)| !self.cancelled[..i].contains(&x))
+    && self.approved.iter().all(|pubkey| !self.rejected.contains(pubkey))
+))]
 pub struct Proposal {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -126,6 +132,7 @@ impl Proposal {
 /// The status of a proposal.
 /// Each variant wraps a timestamp of when the status was set.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 #[non_exhaustive]
 pub enum ProposalStatus {
     /// Proposal is in the draft mode and can be voted on.

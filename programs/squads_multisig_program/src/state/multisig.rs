@@ -8,6 +8,20 @@ use crate::errors::*;
 pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 
 #[account]
+#[cfg_attr(any(kani, feature = "kani"), 
+    invariant(
+        self.members.len() <= usize::from(u16::MAX)
+        && self.threshold > 0
+        && !self.members.windows(2).any(|win| win[0].key == win[1].key)
+        && self.members.iter().all(|m| m.permissions.mask < 8)
+        && Self::num_proposers(&self.members) > 0
+        && Self::num_executors(&self.members) > 0
+        && Self::num_voters(&self.members) > 0
+        && usize::from(self.threshold) <= Self::num_voters(&self.members)
+        && self.stale_transaction_index <= self.transaction_index
+        && self.time_lock <= MAX_TIME_LOCK
+    )
+)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
@@ -98,7 +112,10 @@ impl Multisig {
         AccountInfo::realloc(&multisig, new_size, false)?;
 
         // If more lamports are needed, transfer them to the account.
+        #[cfg(not(any(kani, feature = "kani")))]
         let rent_exempt_lamports = Rent::get().unwrap().minimum_balance(new_size).max(1);
+        #[cfg(any(kani, feature = "kani"))]
+        let rent_exempt_lamports = kani::any::<u64>().max(1);
         let top_up_lamports =
             rent_exempt_lamports.saturating_sub(multisig.to_account_info().lamports());
 
@@ -215,6 +232,7 @@ impl Multisig {
     /// Add `new_member` to the multisig `members` vec and sort the vec.
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
+        #[cfg(not(any(kani, feature = "kani")))]
         self.members.sort_by_key(|m| m.key);
     }
 
@@ -235,6 +253,7 @@ impl Multisig {
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary, Default, Copy))]
 pub struct Member {
     pub key: Pubkey,
     pub permissions: Permissions,
@@ -251,6 +270,7 @@ pub enum Permission {
 #[derive(
     AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug,
 )]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct Permissions {
     pub mask: u8,
 }

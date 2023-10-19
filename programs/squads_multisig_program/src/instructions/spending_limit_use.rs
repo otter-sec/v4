@@ -7,6 +7,7 @@ use crate::errors::*;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
 pub struct SpendingLimitUseArgs {
     /// Amount of tokens to transfer.
     pub amount: u64,
@@ -117,7 +118,7 @@ impl SpendingLimitUse<'_> {
         } else {
             // SpendingLimit is for an SPL token, `mint` must match `spending_limit.mint`.
             require!(
-                spending_limit.mint == mint.as_ref().unwrap().key(),
+                spending_limit.mint == mint.as_ref().ok_or(MultisigError::InvalidMint)?.key(),
                 MultisigError::InvalidMint
             );
         }
@@ -154,7 +155,9 @@ impl SpendingLimitUse<'_> {
 
         // Reset `spending_limit.remaining_amount` if the `spending_limit.period` has passed.
         if let Some(reset_period) = spending_limit.period.to_seconds() {
-            let passed_since_last_reset = now.checked_sub(spending_limit.last_reset).unwrap();
+            let passed_since_last_reset = now
+                .checked_sub(spending_limit.last_reset)
+                .ok_or(MultisigError::Overflow)?;
 
             if passed_since_last_reset > reset_period {
                 spending_limit.remaining_amount = spending_limit.amount;
@@ -164,8 +167,12 @@ impl SpendingLimitUse<'_> {
                 // last_reset = last_reset + periods_passed * reset_period,
                 spending_limit.last_reset = spending_limit
                     .last_reset
-                    .checked_add(periods_passed.checked_mul(reset_period).unwrap())
-                    .unwrap();
+                    .checked_add(
+                        periods_passed
+                            .checked_mul(reset_period)
+                            .ok_or(MultisigError::Overflow)?,
+                    )
+                    .ok_or(MultisigError::Overflow)?;
             }
         }
 

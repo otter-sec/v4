@@ -4,5 +4,9 @@ pub const SEED_PROPOSAL: &[u8] = b"proposal";
 pub const SEED_TRANSACTION: &[u8] = b"transaction";
 pub const SEED_BATCH_TRANSACTION: &[u8] = b"batch_transaction";
 pub const SEED_VAULT: &[u8] = b"vault";
+// NOTE: Updated to match the Vec length for verification
+#[cfg(any(kani, feature = "kani"))]
+pub const SEED_EPHEMERAL_SIGNER: &[u8] = b"eph_signer";
+#[cfg(not(any(kani, feature = "kani")))]
 pub const SEED_EPHEMERAL_SIGNER: &[u8] = b"ephemeral_signer";
 pub const SEED_SPENDING_LIMIT: &[u8] = b"spending_limit";
