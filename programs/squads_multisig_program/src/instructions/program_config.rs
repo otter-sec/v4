@@ -3,17 +3,17 @@ use anchor_lang::prelude::*;
 use crate::errors::MultisigError;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProgramConfigSetAuthorityArgs {
     pub new_authority: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProgramConfigSetMultisigCreationFeeArgs {
     pub new_multisig_creation_fee: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProgramConfigSetTreasuryArgs {
     pub new_treasury: Pubkey,
 }

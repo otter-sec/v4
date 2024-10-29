@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ConfigTransactionCreateArgs {
     pub actions: Vec<ConfigAction>,
     pub memo: Option<String>,

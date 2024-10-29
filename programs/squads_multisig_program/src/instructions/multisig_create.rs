@@ -13,7 +13,7 @@ pub struct Deprecated<'info> {
     pub null: AccountInfo<'info>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigCreateArgsV2 {
     /// The authority that can configure the multisig: add/remove members, change the threshold, etc.
     /// Should be set to `None` for autonomous multisigs.

@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigAddSpendingLimitArgs {
     /// Key that is used to seed the SpendingLimit PDA.
     pub create_key: Pubkey,

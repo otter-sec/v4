@@ -5,7 +5,7 @@ use crate::errors::*;
 use crate::state::*;
 use crate::utils::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
