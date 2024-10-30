@@ -204,8 +204,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                         remaining_amount: *amount,
                         last_reset: Clock::get()?.unix_timestamp,
                         bump: spending_limit_bump,
-                        members,
-                        destinations: destinations.to_vec(),
+                        members.into(),
+                        destinations: destinations.to_vec().into(),
                     };
 
                     spending_limit.invariant()?;

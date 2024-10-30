@@ -123,7 +123,7 @@ impl ProposalVote<'_> {
 
         proposal
             .cancelled
-            .retain(|k| multisig.is_member(*k).is_some());
+            .retain(|k:Pubkey| multisig.is_member(*k).is_some());
 
         proposal.cancel(member.key(), usize::from(multisig.threshold))?;
 
@@ -145,7 +145,7 @@ impl<'info> ProposalCancelV2<'info> {
         let system_program_account_info = &ctx.accounts.system_program.to_account_info();
 
         // Create context for cancel instruction
-        let cancel_context = Context::new(ctx.program_id, &mut ctx.accounts.proposal_vote, ctx.remaining_accounts, ctx.bumps.proposal_vote);
+        let cancel_context = Context::new(ctx.program_id, &mut ctx.accounts.proposal_vote, ctx.remaining_accounts, ctx.bumps);
 
         // Call cancel instruction
         ProposalVote::proposal_cancel(cancel_context, _args)?;

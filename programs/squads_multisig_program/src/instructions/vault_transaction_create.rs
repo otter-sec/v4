@@ -114,7 +114,7 @@ impl<'info> VaultTransactionCreate<'info> {
         transaction.multisig = multisig_key;
         transaction.creator = creator.key();
         transaction.index = transaction_index;
-        transaction.bump = ctx.bumps.transaction;
+        transaction.bump = ctx.bumps.get("transaction");
         transaction.vault_index = args.vault_index;
         transaction.vault_bump = vault_bump;
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
@@ -151,7 +151,7 @@ pub struct TransactionMessage {
 }
 
 // Concise serialization schema for instructions that make up transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct CompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -162,7 +162,7 @@ pub struct CompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts in a single tx.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct MessageAddressTableLookup {
     /// Address lookup table account key
     pub account_key: Pubkey,

@@ -300,6 +300,6 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             executable_instructions.push((ix, account_infos));
         }
 
-        executable_instructions
+        executable_instructions.into()
     }
 }

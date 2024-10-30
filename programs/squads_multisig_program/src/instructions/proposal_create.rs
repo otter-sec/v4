@@ -101,10 +101,10 @@ impl ProposalCreate<'_> {
                 timestamp: Clock::get()?.unix_timestamp,
             }
         };
-        proposal.bump = ctx.bumps.proposal;
-        proposal.approved = vec![];
-        proposal.rejected = vec![];
-        proposal.cancelled = vec![];
+        proposal.bump = ctx.bumps.get("proposal");
+        proposal.approved:Vec<Pubkey> = vec![];
+        proposal.rejected:Vec<Pubkey> = vec![];
+        proposal.cancelled:Vec<Pubkey> = vec![];
 
         Ok(())
     }

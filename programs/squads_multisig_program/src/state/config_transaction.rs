@@ -1,3 +1,5 @@
+use std::default;
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 
@@ -76,4 +78,7 @@ pub enum ConfigAction {
     RemoveSpendingLimit { spending_limit: Pubkey },
     /// Set the `rent_collector` config parameter of the multisig.
     SetRentCollector { new_rent_collector: Option<Pubkey> },
+    // To fix default value for ConfigAction
+    #[default]
+    NoAction,
 }
