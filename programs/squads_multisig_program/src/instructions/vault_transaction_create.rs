@@ -152,7 +152,14 @@ pub struct TransactionMessage {
 
 impl TransactionMessage {    
     pub fn deserialize(input: &mut &[u8]) -> Result<Self> {
-            Ok(TransactionMessage::default())
+            #[cfg(not(feature = "kani"))]
+            {
+                Ok(TransactionMessage::default())
+            }
+            #[cfg(feature = "kani")]
+            {
+                Ok(kani::any())
+            }
     }
 }
 
