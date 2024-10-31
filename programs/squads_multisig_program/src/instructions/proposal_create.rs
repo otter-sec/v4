@@ -102,9 +102,9 @@ impl ProposalCreate<'_> {
             }
         };
         proposal.bump = ctx.bumps.get("proposal");
-        proposal.approved:Vec<Pubkey> = vec![];
-        proposal.rejected:Vec<Pubkey> = vec![];
-        proposal.cancelled:Vec<Pubkey> = vec![];
+        proposal.approved = Vec::<Pubkey>::new();
+        proposal.rejected = Vec::<Pubkey>::new();
+        proposal.cancelled = Vec::<Pubkey>::new();
 
         Ok(())
     }
