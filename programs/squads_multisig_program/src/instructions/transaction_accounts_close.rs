@@ -75,7 +75,7 @@ impl ConfigTransactionAccountsClose<'_> {
             None
         } else {
             Some(Proposal::try_deserialize(
-                &mut proposal.data.borrow_mut(),
+                &mut &*proposal.data.borrow_mut(),
             )?)
         };
 
@@ -182,7 +182,7 @@ impl VaultTransactionAccountsClose<'_> {
             None
         } else {
             Some(Proposal::try_deserialize(
-                &mut proposal.data.borrow_mut(),
+                &mut &*proposal.data.borrow_mut(),
             )?)
         };
 
@@ -416,7 +416,7 @@ impl BatchAccountsClose<'_> {
             None
         } else {
             Some(Proposal::try_deserialize(
-                &mut proposal.data.borrow_mut(),
+                &mut &*proposal.data.borrow_mut(),
             )?)
         };
 
