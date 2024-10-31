@@ -123,7 +123,7 @@ impl ProposalVote<'_> {
 
         proposal
             .cancelled
-            .retain(|k:Pubkey| multisig.is_member(*k).is_some());
+            .retain(|k| multisig.is_member(*k).is_some());
 
         proposal.cancel(member.key(), usize::from(multisig.threshold))?;
 

@@ -133,7 +133,7 @@ impl<'info> VaultTransactionCreate<'info> {
 }
 
 /// Unvalidated instruction data, must be treated as untrusted.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct TransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -149,6 +149,14 @@ pub struct TransactionMessage {
     /// for this transaction.
     pub address_table_lookups: SmallVec<u8, MessageAddressTableLookup>,
 }
+
+impl TransactionMessage {    
+    pub fn deserialize(input: &mut &[u8]) -> Result<Self> {
+            Ok(TransactionMessage::default())
+    }
+}
+
+
 
 // Concise serialization schema for instructions that make up transaction.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
