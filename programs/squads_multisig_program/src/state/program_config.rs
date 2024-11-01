@@ -14,8 +14,8 @@ pub struct ProgramConfig {
     pub multisig_creation_fee: u64,
     /// The treasury account to send charged fees to.
     pub treasury: Pubkey,
-    /// Reserved for future use.
-    pub _reserved: [u8; 64],
+    // Reserved for future use.
+    // pub _reserved: [u8; 2], // Note: Removed for verification purposes, this field is not used.
 }
 
 impl ProgramConfig {
