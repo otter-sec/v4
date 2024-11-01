@@ -252,6 +252,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                     // We don't need to invalidate prior transactions here because changing
                     // `rent_collector` doesn't affect the consensus parameters of the multisig.
                 }
+
+                _ => {}
             }
         }
 
