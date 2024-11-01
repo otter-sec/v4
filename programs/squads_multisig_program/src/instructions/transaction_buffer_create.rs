@@ -4,7 +4,7 @@ use crate::errors::*;
 use crate::state::MAX_BUFFER_SIZE;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct TransactionBufferCreateArgs {
     /// Index of the buffer account to seed the account derivation
     pub buffer_index: u8,

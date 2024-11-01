@@ -5,7 +5,7 @@ use crate::errors::*;
 use crate::state::*;
 use crate::utils::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct VaultTransactionCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
@@ -114,7 +114,7 @@ impl<'info> VaultTransactionCreate<'info> {
         transaction.multisig = multisig_key;
         transaction.creator = creator.key();
         transaction.index = transaction_index;
-        transaction.bump = ctx.bumps.transaction;
+        transaction.bump = ctx.bumps.get("transaction");
         transaction.vault_index = args.vault_index;
         transaction.vault_bump = vault_bump;
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
@@ -133,7 +133,7 @@ impl<'info> VaultTransactionCreate<'info> {
 }
 
 /// Unvalidated instruction data, must be treated as untrusted.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct TransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -150,8 +150,23 @@ pub struct TransactionMessage {
     pub address_table_lookups: SmallVec<u8, MessageAddressTableLookup>,
 }
 
+impl TransactionMessage {    
+    pub fn deserialize(_input: &mut &[u8]) -> Result<Self> {
+            #[cfg(not(feature = "kani"))]
+            {
+                Ok(TransactionMessage::default())
+            }
+            #[cfg(feature = "kani")]
+            {
+                Ok(kani::any())
+            }
+    }
+}
+
+
+
 // Concise serialization schema for instructions that make up transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct CompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -162,7 +177,7 @@ pub struct CompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts in a single tx.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct MessageAddressTableLookup {
     /// Address lookup table account key
     pub account_key: Pubkey,

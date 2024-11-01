@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::*;
+// use crate::errors::*;
 
 #[account]
+#[invariant(true)]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -47,6 +48,12 @@ pub struct SpendingLimit {
     pub destinations: Vec<Pubkey>,
 }
 
+impl Owner for SpendingLimit {
+    fn owner() -> Pubkey {
+        kani::any()
+    }
+}
+
 impl SpendingLimit {
     pub fn size(members_length: usize, destinations_length: usize) -> usize {
         8  + // anchor discriminator
@@ -80,7 +87,7 @@ impl SpendingLimit {
 }
 
 /// The reset period of the spending limit.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, Arbitrary)]
 pub enum Period {
     /// The spending limit can only be used once.
     OneTime,

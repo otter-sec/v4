@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigRemoveSpendingLimitArgs {
     /// Memo is used for indexing only.
     pub memo: Option<String>,

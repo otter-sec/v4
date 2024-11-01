@@ -4,7 +4,7 @@ use crate::errors::*;
 use crate::state::*;
 use crate::TransactionMessage;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct BatchAddTransactionArgs {
     /// Number of ephemeral signing PDAs required by the transaction.
     pub ephemeral_signers: u8,
@@ -133,7 +133,7 @@ impl BatchAddTransaction<'_> {
             })
             .collect();
 
-        transaction.bump = ctx.bumps.transaction;
+        transaction.bump = ctx.bumps.get("transaction");
         transaction.ephemeral_signer_bumps = ephemeral_signer_bumps;
         transaction.message = transaction_message.try_into()?;
 

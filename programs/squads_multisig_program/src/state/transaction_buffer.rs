@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hash;
 
-use crate::errors::MultisigError;
+// use crate::errors::MultisigError;
 
 pub const MAX_BUFFER_SIZE: usize = 4000;
 
 #[account]
+#[invariant(true)]
 #[derive(Default, Debug)]
 pub struct TransactionBuffer {
     /// The multisig this belongs to.

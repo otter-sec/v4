@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProposalCreateArgs {
     /// Index of the multisig transaction this proposal is associated with.
     pub transaction_index: u64,
@@ -101,10 +101,10 @@ impl ProposalCreate<'_> {
                 timestamp: Clock::get()?.unix_timestamp,
             }
         };
-        proposal.bump = ctx.bumps.proposal;
-        proposal.approved = vec![];
-        proposal.rejected = vec![];
-        proposal.cancelled = vec![];
+        proposal.bump = ctx.bumps.get("proposal");
+        proposal.approved = Vec::<Pubkey>::new();
+        proposal.rejected = Vec::<Pubkey>::new();
+        proposal.cancelled = Vec::<Pubkey>::new();
 
         Ok(())
     }

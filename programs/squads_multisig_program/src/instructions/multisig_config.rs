@@ -3,42 +3,42 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigAddMemberArgs {
     pub new_member: Member,
     /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigRemoveMemberArgs {
     pub old_member: Pubkey,
     /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigChangeThresholdArgs {
     pub new_threshold: u16,
     /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigSetTimeLockArgs {
     pub time_lock: u32,
     /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigSetConfigAuthorityArgs {
     pub config_authority: Pubkey,
     /// Memo is used for indexing only.
     pub memo: Option<String>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigSetRentCollectorArgs {
     pub rent_collector: Option<Pubkey>,
     /// Memo is used for indexing only.

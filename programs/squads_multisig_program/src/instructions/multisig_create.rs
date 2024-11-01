@@ -13,7 +13,7 @@ pub struct Deprecated<'info> {
     pub null: AccountInfo<'info>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct MultisigCreateArgsV2 {
     /// The authority that can configure the multisig: add/remove members, change the threshold, etc.
     /// Should be set to `None` for autonomous multisigs.
@@ -91,7 +91,7 @@ impl MultisigCreateV2<'_> {
         multisig.transaction_index = 0;
         multisig.stale_transaction_index = 0;
         multisig.create_key = ctx.accounts.create_key.key();
-        multisig.bump = ctx.bumps.multisig;
+        multisig.bump = ctx.bumps.get("multisig");
         multisig.members = members;
         multisig.rent_collector = args.rent_collector;
 

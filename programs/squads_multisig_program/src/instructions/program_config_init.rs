@@ -12,7 +12,7 @@ const INITIALIZER: Pubkey = pubkey!("HM5y4mz3Bt9JY9mr1hkyhnvqxSH4H2u2451j7Hc2dtv
 #[cfg(feature = "testing")]
 const INITIALIZER: Pubkey = pubkey!("BrQAbGdWQ9YUHmWWgKFdFe4miTURH71jkYFPXfaosqDv");
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProgramConfigInitArgs {
     /// The authority that can configure the program config: change the treasury, etc.
     pub authority: Pubkey,
