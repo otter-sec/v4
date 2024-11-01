@@ -8,6 +8,7 @@ use crate::instructions::{CompiledInstruction, MessageAddressTableLookup, Transa
 /// Vault transaction is a transaction that's executed on behalf of the multisig vault PDA
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 #[account]
+#[invariant(true)]
 #[derive(Default)]
 pub struct VaultTransaction {
     /// The multisig this belongs to.
@@ -59,7 +60,7 @@ impl VaultTransaction {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Arbitrary)]
 pub struct VaultTransactionMessage {
     /// The number of signer pubkeys in the account_keys vec.
     pub num_signers: u8,
@@ -196,7 +197,7 @@ impl TryFrom<TransactionMessage> for VaultTransactionMessage {
 
 /// Concise serialization schema for instructions that make up a transaction.
 /// Closely mimics the Solana transaction wire format.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Arbitrary)]
 pub struct MultisigCompiledInstruction {
     pub program_id_index: u8,
     /// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
@@ -217,7 +218,7 @@ impl From<CompiledInstruction> for MultisigCompiledInstruction {
 
 /// Address table lookups describe an on-chain address lookup table to use
 /// for loading more readonly and writable accounts into a transaction.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Arbitrary)]
 pub struct MultisigMessageAddressTableLookup {
     /// Address lookup table account key.
     pub account_key: Pubkey,

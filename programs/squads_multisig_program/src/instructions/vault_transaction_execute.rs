@@ -84,7 +84,7 @@ impl VaultTransactionExecute<'_> {
 
     /// Execute the multisig transaction.
     /// The transaction must be `Approved`.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts.validate())] 
     pub fn vault_transaction_execute(ctx: Context<Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
@@ -123,10 +123,12 @@ impl VaultTransactionExecute<'_> {
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(transaction_key, &transaction.ephemeral_signer_bumps);
 
+        let address_lookup_table_account_infos = address_lookup_table_account_infos.to_vec().into();
+        let message_account_infos = message_account_infos.to_vec().into();
         let executable_message = ExecutableTransactionMessage::new_validated(
-            transaction_message,
-            message_account_infos,
-            address_lookup_table_account_infos,
+            &transaction_message,
+            &message_account_infos,
+            &address_lookup_table_account_infos,
             &vault_pubkey,
             &ephemeral_signer_keys,
         )?;

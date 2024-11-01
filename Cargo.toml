@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "programs/*",
-    "sdk/rs"
+    # "sdk/rs"
 ]
 
 [profile.release]

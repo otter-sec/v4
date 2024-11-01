@@ -103,7 +103,7 @@ impl BatchExecuteTransaction<'_> {
     }
 
     /// Execute a transaction from the batch.
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts.validate())] 
     pub fn batch_execute_transaction(ctx: Context<Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
@@ -126,7 +126,7 @@ impl BatchExecuteTransaction<'_> {
             &[batch.vault_bump],
         ];
 
-        let transaction_message = transaction.message;
+        let transaction_message = &transaction.message;
         let num_lookups = transaction_message.address_table_lookups.len();
 
         let message_account_infos = ctx
@@ -143,10 +143,12 @@ impl BatchExecuteTransaction<'_> {
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(batch_key, &transaction.ephemeral_signer_bumps);
 
+        let address_lookup_table_account_infos = address_lookup_table_account_infos.to_vec().into();
+        let message_account_infos = message_account_infos.to_vec().into();
         let executable_message = ExecutableTransactionMessage::new_validated(
-            transaction_message,
-            message_account_infos,
-            address_lookup_table_account_infos,
+            &transaction_message,
+            &message_account_infos,
+            &address_lookup_table_account_infos,
             &vault_pubkey,
             &ephemeral_signer_keys,
         )?;

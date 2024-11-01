@@ -9,6 +9,8 @@ use crate::id;
 pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 
 #[account]
+#[invariant(true)]
+#[derive(Clone)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
     pub create_key: Pubkey,
@@ -249,7 +251,7 @@ impl Multisig {
     }
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone)]
+#[derive(AnchorDeserialize, AnchorSerialize, InitSpace, Eq, PartialEq, Clone, Default, Arbitrary, Copy)]
 pub struct Member {
     pub key: Pubkey,
     pub permissions: Permissions,
@@ -264,7 +266,7 @@ pub enum Permission {
 
 /// Bitmask for permissions.
 #[derive(
-    AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug,
+    AnchorSerialize, AnchorDeserialize, InitSpace, Eq, PartialEq, Clone, Copy, Default, Debug, Arbitrary
 )]
 pub struct Permissions {
     pub mask: u8,

@@ -56,27 +56,33 @@ impl<T: AnchorSerialize> AnchorSerialize for SmallVec<u16, T> {
 impl<L, T> AnchorDeserialize for SmallVec<L, T>
 where
     L: AnchorDeserialize + Into<u32>,
-    T: AnchorDeserialize,
+    T: AnchorDeserialize + Default,
 {
     /// This implementation almost exactly matches standard implementation of
     /// `Vec<T>::deserialize` except that it uses `L` instead of `u32` for the length,
     /// and doesn't include `unsafe` code.
-    fn deserialize_reader<R: Read>(reader: &mut R) -> std::io::Result<Self> {
-        let len: u32 = L::deserialize_reader(reader)?.into();
+    fn deserialize(input: &mut &[u8]) -> std::io::Result<Self> {
+        let len: u32 = L::deserialize(input)?.into();
 
         let vec = if len == 0 {
             Vec::new()
-        } else if let Some(vec_bytes) = T::vec_from_reader(len, reader)? {
-            vec_bytes
+        // } else if let Some(vec_bytes) = T::vec_from_bytes(len, input)? {
+        //     vec_bytes
         } else {
-            let mut result = Vec::with_capacity(hint::cautious::<T>(len));
+            // let mut result = Vec::with_capacity(hint::cautious::<T>(len));
+            let mut result = Vec::new();
             for _ in 0..len {
-                result.push(T::deserialize_reader(reader)?);
+                result.push(T::deserialize(input)?);
             }
             result
         };
 
         Ok(SmallVec(vec, PhantomData))
+    }
+
+    // TODO need to finish this
+    fn deserialize_reader<R: std::io::Read>(_reader: &mut R) -> std::io::Result<Self> {
+        todo!()
     }
 }
 

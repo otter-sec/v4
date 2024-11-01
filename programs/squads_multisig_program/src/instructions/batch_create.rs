@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct BatchCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
@@ -85,7 +85,7 @@ impl BatchCreate<'_> {
         batch.multisig = multisig_key;
         batch.creator = creator.key();
         batch.index = index;
-        batch.bump = ctx.bumps.batch;
+        batch.bump = ctx.bumps.get("batch");
         batch.vault_index = args.vault_index;
         batch.vault_bump = vault_bump;
         batch.size = 0;

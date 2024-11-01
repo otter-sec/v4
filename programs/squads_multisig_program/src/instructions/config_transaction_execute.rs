@@ -181,12 +181,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                         &rent,
                         SpendingLimit::size(members.len(), destinations.len()),
                         vec![
-                            SEED_PREFIX.to_vec(),
-                            multisig.key().as_ref().to_vec(),
-                            SEED_SPENDING_LIMIT.to_vec(),
-                            create_key.as_ref().to_vec(),
-                            vec![spending_limit_bump],
-                        ],
+                            SEED_PREFIX.to_vec().into(),
+                            multisig.key().as_ref().to_vec().into(),
+                            SEED_SPENDING_LIMIT.to_vec().into(),
+                            create_key.as_ref().to_vec().into(),
+                            vec![spending_limit_bump].into(),
+                        ]
+                        .into(),
                     )?;
 
                     let mut members = members.to_vec();
@@ -204,8 +205,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                         remaining_amount: *amount,
                         last_reset: Clock::get()?.unix_timestamp,
                         bump: spending_limit_bump,
-                        members,
-                        destinations: destinations.to_vec(),
+                        members: members.into(),
+                        destinations: destinations.to_vec().into(),
                     };
 
                     spending_limit.invariant()?;
@@ -252,6 +253,8 @@ impl<'info> ConfigTransactionExecute<'info> {
                     // We don't need to invalidate prior transactions here because changing
                     // `rent_collector` doesn't affect the consensus parameters of the multisig.
                 }
+
+                _ => {}
             }
         }
 

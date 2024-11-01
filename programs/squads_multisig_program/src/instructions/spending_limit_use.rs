@@ -6,7 +6,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Arbitrary)]
 pub struct SpendingLimitUseArgs {
     /// Amount of tokens to transfer.
     pub amount: u64,
@@ -143,7 +143,7 @@ impl SpendingLimitUse<'_> {
         let destination = &mut ctx.accounts.destination;
 
         let multisig_key = ctx.accounts.multisig.key();
-        let vault_bump = ctx.bumps.vault;
+        let vault_bump = ctx.bumps.get("vault");
         let now = Clock::get()?.unix_timestamp;
 
         // Reset `spending_limit.remaining_amount` if the `spending_limit.period` has passed.

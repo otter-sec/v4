@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ProposalVoteArgs {
     pub memo: Option<String>,
 }
@@ -145,7 +145,7 @@ impl<'info> ProposalCancelV2<'info> {
         let system_program_account_info = &ctx.accounts.system_program.to_account_info();
 
         // Create context for cancel instruction
-        let cancel_context = Context::new(ctx.program_id, &mut ctx.accounts.proposal_vote, ctx.remaining_accounts, ctx.bumps.proposal_vote);
+        let cancel_context = Context::new(ctx.program_id, &mut ctx.accounts.proposal_vote, ctx.remaining_accounts, ctx.bumps);
 
         // Call cancel instruction
         ProposalVote::proposal_cancel(cancel_context, _args)?;

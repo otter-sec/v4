@@ -40,7 +40,7 @@ impl<'info> VaultTransactionCreateFromBuffer<'info> {
 
         // Check that the transaction message is "empty"
         require!(
-            args.transaction_message == vec![0, 0, 0, 0, 0, 0],
+            args.transaction_message == vec![0, 0, 0, 0, 0, 0].into(),
             MultisigError::InvalidInstructionArgs
         );
 
@@ -112,7 +112,7 @@ impl<'info> VaultTransactionCreateFromBuffer<'info> {
             ctx.program_id,
             &mut ctx.accounts.vault_transaction_create,
             ctx.remaining_accounts,
-            ctx.bumps.vault_transaction_create,
+            ctx.bumps,
         );
 
         // Call the vault transaction create instruction

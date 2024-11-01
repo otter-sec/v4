@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::errors::*;
 use crate::state::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Arbitrary)]
 pub struct ConfigTransactionCreateArgs {
     pub actions: Vec<ConfigAction>,
     pub memo: Option<String>,
@@ -100,7 +100,7 @@ impl ConfigTransactionCreate<'_> {
         transaction.multisig = multisig_key;
         transaction.creator = creator.key();
         transaction.index = transaction_index;
-        transaction.bump = ctx.bumps.transaction;
+        transaction.bump = ctx.bumps.get("transaction");
         transaction.actions = args.actions;
 
         // Updated last transaction index in the multisig account.
