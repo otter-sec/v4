@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::*;
+// use crate::errors::*;
 
 #[account]
 #[invariant(true)]
@@ -46,6 +46,12 @@ pub struct SpendingLimit {
     /// The destination addresses the spending limit is allowed to sent funds to.
     /// If empty, funds can be sent to any address.
     pub destinations: Vec<Pubkey>,
+}
+
+impl Owner for SpendingLimit {
+    fn owner() -> Pubkey {
+        kani::any()
+    }
 }
 
 impl SpendingLimit {
