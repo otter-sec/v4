@@ -84,7 +84,7 @@ impl VaultTransactionExecute<'_> {
 
     /// Execute the multisig transaction.
     /// The transaction must be `Approved`.
-    // #[access_control(ctx.accounts.validate())] // Todo
+    #[access_control(ctx.accounts.validate())] 
     pub fn vault_transaction_execute(ctx: Context<Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;

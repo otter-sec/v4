@@ -77,7 +77,7 @@ impl MultisigCreateV2<'_> {
     }
 
     /// Creates a multisig.
-    // #[access_control(ctx.accounts.validate())] // Todo
+    #[access_control(ctx.accounts.validate())]
     pub fn multisig_create(ctx: Context<Self>, args: MultisigCreateArgsV2) -> Result<()> {
         // Sort the members by pubkey.
         let mut members = args.members;

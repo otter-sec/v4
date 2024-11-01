@@ -103,7 +103,7 @@ impl BatchExecuteTransaction<'_> {
     }
 
     /// Execute a transaction from the batch.
-    // #[access_control(ctx.accounts.validate())] // Todo
+    #[access_control(ctx.accounts.validate())] 
     pub fn batch_execute_transaction(ctx: Context<Self>) -> Result<()> {
         let multisig = &mut ctx.accounts.multisig;
         let proposal = &mut ctx.accounts.proposal;
