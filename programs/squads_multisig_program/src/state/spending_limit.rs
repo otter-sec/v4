@@ -4,6 +4,7 @@ use crate::errors::*;
 
 #[account]
 #[invariant(true)]
+#[derive(Default)]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -81,11 +82,12 @@ impl SpendingLimit {
 }
 
 /// The reset period of the spending limit.
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, Arbitrary)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, Arbitrary, Default)]
 pub enum Period {
     /// The spending limit can only be used once.
     OneTime,
     /// The spending limit is reset every day.
+    #[default]
     Day,
     /// The spending limit is reset every week (7 days).
     Week,
@@ -103,3 +105,18 @@ impl Period {
         }
     }
 }
+// impl tryform AccountInfo for SpendingLimit 
+// impl<'a> TryFrom<&'a AccountInfo<'a>> for Account<'a, SpendingLimit> {
+//     type Error = MultisigError;
+
+//     fn try_from(account_info: &'a AccountInfo<'a>) -> Result<Self, Self::Error> {
+//         // Implement the logic for creating Account<SpendingLimit> from AccountInfo
+//         // Here is a simple example assuming SpendingLimit implements Default
+//         // and Account has a function from that can be used for conversion
+
+//         // Placeholder example, adjust according to your actual types and logic
+//         let spending_limit = SpendingLimit::default();
+
+//         Ok(Account::new(*account_info, spending_limit))
+//     }
+// }
