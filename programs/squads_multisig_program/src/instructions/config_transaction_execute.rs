@@ -181,12 +181,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                         &rent,
                         SpendingLimit::size(members.len(), destinations.len()),
                         vec![
-                            SEED_PREFIX.to_vec(),
-                            multisig.key().as_ref().to_vec(),
-                            SEED_SPENDING_LIMIT.to_vec(),
-                            create_key.as_ref().to_vec(),
-                            vec![spending_limit_bump],
-                        ],
+                            SEED_PREFIX.to_vec().into(),
+                            multisig.key().as_ref().to_vec().into(),
+                            SEED_SPENDING_LIMIT.to_vec().into(),
+                            create_key.as_ref().to_vec().into(),
+                            vec![spending_limit_bump].into(),
+                        ]
+                        .into(),
                     )?;
 
                     let mut members = members.to_vec();
