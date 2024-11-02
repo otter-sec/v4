@@ -43,7 +43,11 @@ pub mod squads_multisig_program {
     use errors::MultisigError;
 
     use super::*;
-
+    
+    #[succeeds_if(
+        args.authority != Pubkey::default()
+        && args.treasury != Pubkey::default()
+    )]
     /// Initialize the program config.
     pub fn program_config_init(
         ctx: Context<ProgramConfigInit>,
@@ -52,6 +56,11 @@ pub mod squads_multisig_program {
         ProgramConfigInit::program_config_init(ctx, args)
     }
 
+    #[succeeds_if(
+        args.new_authority != Pubkey::default()
+        && ctx.accounts.program_config.treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `authority` parameter of the program config.
     pub fn program_config_set_authority(
         ctx: Context<ProgramConfig>,
@@ -60,6 +69,11 @@ pub mod squads_multisig_program {
         ProgramConfig::program_config_set_authority(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.program_config.authority != Pubkey::default()
+        && ctx.accounts.program_config.treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `multisig_creation_fee` parameter of the program config.
     pub fn program_config_set_multisig_creation_fee(
         ctx: Context<ProgramConfig>,
@@ -68,6 +82,11 @@ pub mod squads_multisig_program {
         ProgramConfig::program_config_set_multisig_creation_fee(ctx, args)
     }
 
+    #[succeeds_if(
+        args.new_treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `treasury` parameter of the program config.
     pub fn program_config_set_treasury(
         ctx: Context<ProgramConfig>,
