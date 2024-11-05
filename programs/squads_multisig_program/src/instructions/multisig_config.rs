@@ -97,6 +97,7 @@ impl MultisigConfig<'_> {
         multisig.add_member(new_member);
 
         // Make sure the multisig account can fit the newly set rent_collector.
+        #[verify_ignore]
         Multisig::realloc_if_needed(
             multisig.to_account_info(),
             multisig.members.len(),
