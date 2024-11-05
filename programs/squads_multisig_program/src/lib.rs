@@ -193,6 +193,9 @@ pub mod squads_multisig_program {
     }
 
     /// Set the multisig `rent_collector`.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_set_rent_collector(
         ctx: Context<MultisigConfig>,
         args: MultisigSetRentCollectorArgs,
@@ -201,6 +204,12 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new spending limit for the controlled multisig.
+    #[succeeds_if(
+        args.amount != 0
+        && args.members.len() > 0
+        && args.members.windows(2).all(|win| win[0] != win[1])
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_add_spending_limit(
         ctx: Context<MultisigAddSpendingLimit>,
         args: MultisigAddSpendingLimitArgs,
@@ -209,6 +218,10 @@ pub mod squads_multisig_program {
     }
 
     /// Remove the spending limit from the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn multisig_remove_spending_limit(
         ctx: Context<MultisigRemoveSpendingLimit>,
         args: MultisigRemoveSpendingLimitArgs,
