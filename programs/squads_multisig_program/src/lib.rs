@@ -43,7 +43,7 @@ pub mod squads_multisig_program {
     use errors::MultisigError;
 
     use super::*;
-    
+
     #[succeeds_if(
         args.authority != Pubkey::default()
         && args.treasury != Pubkey::default()
@@ -125,6 +125,11 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_remove_member(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.time_lock > 0
+        && args.time_lock <= MAX_TIME_LOCK
+    )]
     /// Set the `time_lock` config parameter for the controlled multisig.
     pub fn multisig_set_time_lock(
         ctx: Context<MultisigConfig>,
@@ -133,6 +138,11 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_set_time_lock(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_threshold > 0
+        && args.new_threshold as usize <= ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+    )]
     /// Set the `threshold` config parameter for the controlled multisig.
     pub fn multisig_change_threshold(
         ctx: Context<MultisigConfig>,
@@ -141,6 +151,9 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_change_threshold(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     /// Set the multisig `config_authority`.
     pub fn multisig_set_config_authority(
         ctx: Context<MultisigConfig>,
