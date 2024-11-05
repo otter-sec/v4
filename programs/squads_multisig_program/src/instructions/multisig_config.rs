@@ -52,7 +52,7 @@ pub struct MultisigConfig<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,
@@ -97,6 +97,7 @@ impl MultisigConfig<'_> {
         multisig.add_member(new_member);
 
         // Make sure the multisig account can fit the newly set rent_collector.
+        #[verify_ignore]
         Multisig::realloc_if_needed(
             multisig.to_account_info(),
             multisig.members.len(),
