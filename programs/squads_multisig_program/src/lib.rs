@@ -230,6 +230,18 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new config transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.config_authority == Pubkey::default()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && !args.actions.is_empty()
+        && args.actions.iter().all(|action| {
+            if let ConfigAction::SetTimeLock { new_time_lock, .. } = action {
+                *new_time_lock <= MAX_TIME_LOCK
+            } else {
+                true
+            }
+        })
+    )]
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
