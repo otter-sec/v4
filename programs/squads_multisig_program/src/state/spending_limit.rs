@@ -3,7 +3,9 @@ use anchor_lang::prelude::*;
 // use crate::errors::*;
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.invariant().is_ok()
+)]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,

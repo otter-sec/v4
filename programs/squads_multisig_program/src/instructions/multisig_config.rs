@@ -211,6 +211,7 @@ impl MultisigConfig<'_> {
         multisig.rent_collector = args.rent_collector;
 
         // Make sure the multisig account can fit the newly set rent_collector.
+        #[verify_ignore]
         Multisig::realloc_if_needed(
             multisig.to_account_info(),
             multisig.members.len(),
