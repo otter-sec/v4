@@ -72,6 +72,7 @@ impl BatchCreate<'_> {
         let multisig_key = multisig.key();
 
         // Increment the transaction index.
+        kani::assume(multisig.transaction_index < u64::MAX);
         let index = multisig.transaction_index.checked_add(1).expect("overflow");
 
         let vault_seeds = &[

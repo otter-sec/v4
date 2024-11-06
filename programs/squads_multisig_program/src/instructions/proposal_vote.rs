@@ -135,6 +135,7 @@ impl<'info> ProposalCancelV2<'info> {
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
+    #[helper_fn]
     pub fn proposal_cancel_v2(ctx: Context<'_, '_, 'info, 'info, Self>, _args: ProposalVoteArgs) -> Result<()> {
         // Readonly accounts
         let multisig = &ctx.accounts.proposal_vote.multisig.clone();
@@ -151,6 +152,7 @@ impl<'info> ProposalCancelV2<'info> {
         ProposalVote::proposal_cancel(cancel_context, _args)?;
 
         // Reallocate the proposal size if needed
+        #[verify_ignore]
         Proposal::realloc_if_needed(
             proposal_account_info.clone(),
             multisig.members.len(),
