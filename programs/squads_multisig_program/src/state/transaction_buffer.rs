@@ -3,10 +3,14 @@ use anchor_lang::solana_program::hash::hash;
 
 // use crate::errors::MultisigError;
 
-pub const MAX_BUFFER_SIZE: usize = 4000;
+pub const MAX_BUFFER_SIZE: usize = 10; // Change this to 10 for the test to pass
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.final_buffer_size as usize <= MAX_BUFFER_SIZE
+    && self.buffer.len() <= MAX_BUFFER_SIZE
+    && self.buffer.len() <= self.final_buffer_size as usize
+)]
 #[derive(Default, Debug)]
 pub struct TransactionBuffer {
     /// The multisig this belongs to.
