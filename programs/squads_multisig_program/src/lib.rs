@@ -211,6 +211,13 @@ pub mod squads_multisig_program {
     }
 
     /// Create a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && args.final_buffer_size as usize <= MAX_BUFFER_SIZE
+        && args.buffer.len() <= MAX_BUFFER_SIZE
+        && args.buffer.len() <= args.final_buffer_size as usize
+    )]
     pub fn transaction_buffer_create(
         ctx: Context<TransactionBufferCreate>,
         args: TransactionBufferCreateArgs,
@@ -219,6 +226,11 @@ pub mod squads_multisig_program {
     }
 
     /// Close a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.transaction_buffer.creator == ctx.accounts.creator.key()
+    )]
     pub fn transaction_buffer_close(ctx: Context<TransactionBufferClose>) -> Result<()> {
         TransactionBufferClose::transaction_buffer_close(ctx)
     }
