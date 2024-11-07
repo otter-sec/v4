@@ -297,6 +297,12 @@ pub mod squads_multisig_program {
     }
 
     /// Extend a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.transaction_buffer.creator == ctx.accounts.creator.key()
+        && args.buffer.len() + ctx.accounts.transaction_buffer.buffer.len() <= ctx.accounts.transaction_buffer.final_buffer_size as usize
+    )]
     pub fn transaction_buffer_extend(
         ctx: Context<TransactionBufferExtend>,
         args: TransactionBufferExtendArgs,

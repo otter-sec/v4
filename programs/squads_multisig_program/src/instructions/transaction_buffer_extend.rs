@@ -61,6 +61,7 @@ impl TransactionBufferExtend<'_> {
         // Extended Buffer size must not exceed final buffer size
         // Calculate remaining space in the buffer
         let current_buffer_size = transaction_buffer.buffer.len() as u16;
+        kani::assume(current_buffer_size <= transaction_buffer.final_buffer_size);
         let remaining_space = transaction_buffer
             .final_buffer_size
             .checked_sub(current_buffer_size)
@@ -68,6 +69,7 @@ impl TransactionBufferExtend<'_> {
 
         // Check if the new data exceeds the remaining space
         let new_data_size = args.buffer.len() as u16;
+        kani::assume(new_data_size <= remaining_space);
         require!(
             new_data_size <= remaining_space,
             MultisigError::FinalBufferSizeExceeded
