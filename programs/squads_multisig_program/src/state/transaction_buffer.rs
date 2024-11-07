@@ -6,7 +6,11 @@ use anchor_lang::solana_program::hash::hash;
 pub const MAX_BUFFER_SIZE: usize = 4000;
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.final_buffer_size as usize <= MAX_BUFFER_SIZE
+    && self.buffer.len() <= MAX_BUFFER_SIZE
+    && self.buffer.len() <= self.final_buffer_size as usize
+)]
 #[derive(Default, Debug)]
 pub struct TransactionBuffer {
     /// The multisig this belongs to.
