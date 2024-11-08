@@ -406,6 +406,34 @@ pub mod squads_multisig_program {
     /// `transaction` can be closed if either:
     /// - the `proposal` is in a terminal state: `Executed`, `Rejected`, or `Cancelled`.
     /// - the `proposal` is stale.
+    #[succeeds_if(
+        (
+            !ctx.accounts.proposal.data.borrow.is_empty()
+            && (Proposal::try_deserialize(
+                    &mut &*ctx.accounts.proposal.data.borrow()
+                ).is_ok().is_some()
+            &&
+        (
+            let proposal = Proposal::try_deserialize(
+                &mut &*ctx.accounts.proposal.data.borrow()
+            ).unwrap();
+            (   // Stale and execution not started
+                ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index &&
+                (matches!(proposal.status, ProposalStatus::Draft { .. })
+                || matches!(proposal.status, ProposalStatus::Active { .. })
+                || matches!(proposal.status, ProposalStatus::Approved { .. })
+                )
+            ) // Terminal state 
+            || matches!(proposal.status, ProposalStatus::Executed { .. })            
+            || matches!(proposal.status, ProposalStatus::Rejected { .. })
+            || matches!(proposal.status, ProposalStatus::Cancelled { .. })
+            && !matches!(proposal.status, ProposalStatus::Executing { .. }) // Not executing
+        )) ||
+        (
+            ctx.accounts.proposal.data.borrow().is_empty() && 
+            ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index 
+        ))
+    )]
     pub fn config_transaction_accounts_close(
         ctx: Context<ConfigTransactionAccountsClose>,
     ) -> Result<()> {

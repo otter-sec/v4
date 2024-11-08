@@ -1,4 +1,6 @@
 #![allow(deprecated)]
+use std::default;
+
 use anchor_lang::prelude::*;
 
 use crate::errors::*;
@@ -11,6 +13,7 @@ use anchor_lang::system_program;
 /// the latter can be executed only after the `Proposal` has been approved and its time lock is released.
 #[account]
 #[invariant()]
+#[derive(Default)]
 pub struct Proposal {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -184,6 +187,20 @@ impl Proposal {
     }
 }
 
+
+impl Proposal {    
+    pub fn try_deserialize(_input: &mut &[u8]) -> Result<Self> {
+        #[cfg(not(feature = "kani"))]
+        {
+            Ok(Proposal::default())
+        }
+        #[cfg(feature = "kani")]
+        {
+            Ok(kani::any())
+        }
+    }
+}
+
 /// The status of a proposal.
 /// Each variant wraps a timestamp of when the status was set.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug, Arbitrary)]
@@ -206,4 +223,10 @@ pub enum ProposalStatus {
     Executed { timestamp: i64 },
     /// Proposal has been cancelled.
     Cancelled { timestamp: i64 },
+}
+
+impl Default for ProposalStatus {
+    fn default() -> Self {
+        ProposalStatus::Draft { timestamp: 0 }
+    }
 }
