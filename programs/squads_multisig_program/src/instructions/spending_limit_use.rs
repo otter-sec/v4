@@ -110,6 +110,7 @@ impl SpendingLimitUse<'_> {
             require!(mint.is_none(), MultisigError::InvalidMint);
         } else {
             // SpendingLimit is for an SPL token, `mint` must match `spending_limit.mint`.
+            kani::assume(mint.is_some());
             require!(
                 spending_limit.mint == mint.as_ref().unwrap().key(),
                 MultisigError::InvalidMint
@@ -148,6 +149,7 @@ impl SpendingLimitUse<'_> {
 
         // Reset `spending_limit.remaining_amount` if the `spending_limit.period` has passed.
         if let Some(reset_period) = spending_limit.period.to_seconds() {
+            kani::assume(now > spending_limit.last_reset);
             let passed_since_last_reset = now.checked_sub(spending_limit.last_reset).unwrap();
 
             if passed_since_last_reset > reset_period {
@@ -156,6 +158,13 @@ impl SpendingLimitUse<'_> {
                 let periods_passed = passed_since_last_reset.checked_div(reset_period).unwrap();
 
                 // last_reset = last_reset + periods_passed * reset_period,
+                kani::assume(periods_passed.checked_mul(reset_period).is_some());
+                kani::assume(
+                    spending_limit
+                        .last_reset
+                        .checked_add(periods_passed.checked_mul(reset_period).unwrap())
+                        .is_some(),
+                );
                 spending_limit.last_reset = spending_limit
                     .last_reset
                     .checked_add(periods_passed.checked_mul(reset_period).unwrap())
