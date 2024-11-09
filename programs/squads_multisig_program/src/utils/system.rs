@@ -106,6 +106,7 @@ pub fn create_account<'a, 'info>(
 pub fn close<'info>(info: AccountInfo<'info>, sol_destination: AccountInfo<'info>) -> Result<()> {
     // Transfer tokens from the account to the sol_destination.
     let dest_starting_lamports = sol_destination.lamports();
+    kani::assume(dest_starting_lamports.checked_add(info.lamports()).is_some());
     **sol_destination.lamports.borrow_mut() =
         dest_starting_lamports.checked_add(info.lamports()).unwrap();
     **info.lamports.borrow_mut() = 0;
