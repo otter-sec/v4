@@ -9,7 +9,16 @@ use super::*;
 /// Config transaction can perform a predefined set of actions on the Multisig PDA, such as adding/removing members,
 /// changing the threshold, etc.
 #[account]
-#[invariant()]
+#[invariant(
+    !self.actions.is_empty()
+    && self.actions.iter().all(|action| 
+        if let ConfigAction::SetTimeLock { new_time_lock, .. } = action {
+                *new_time_lock <= MAX_TIME_LOCK
+        } else {
+            true
+        }
+    )
+)]
 pub struct ConfigTransaction {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
