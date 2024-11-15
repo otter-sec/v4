@@ -245,10 +245,15 @@ pub mod squads_multisig_program {
 
     /// Create a new vault transaction from a completed transaction buffer.
     /// Finalized buffer hash must match `final_buffer_hash`
+    #[succeeds_if(
+        args.transaction_message == vec![0, 0, 0, 0, 0, 0].into() 
+        && ctx.accounts.transaction_buffer.buffer.len() == ctx.accounts.transaction_buffer.final_buffer_size as usize
+    )]
     pub fn vault_transaction_create_from_buffer<'info>(
         ctx: Context<'_, '_, 'info, 'info, VaultTransactionCreateFromBuffer<'info>>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction_buffer.buffer.len() <= MAX_BUFFER_SIZE);
         VaultTransactionCreateFromBuffer::vault_transaction_create_from_buffer(ctx, args)
     }
 

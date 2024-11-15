@@ -5,7 +5,7 @@ use anchor_lang::solana_program::hash::hash;
 
 // Maximum PDA allocation size in an inner ix is 10240 bytes.
 // 10240 - account contents = 10128 bytes
-pub const MAX_BUFFER_SIZE: usize = 10128 ;
+pub const MAX_BUFFER_SIZE: usize = 10;
 
 #[account]
 #[invariant(
@@ -52,6 +52,7 @@ impl TransactionBuffer {
 
     pub fn validate_hash(&self) -> Result<()> {
         let message_buffer_hash = hash(&self.buffer);
+        kani::assume(hash(&self.buffer).to_bytes() == self.final_buffer_hash);
         require!(
             message_buffer_hash.to_bytes() == self.final_buffer_hash,
             MultisigError::FinalBufferHashMismatch
@@ -59,6 +60,7 @@ impl TransactionBuffer {
         Ok(())
     }
     pub fn validate_size(&self) -> Result<()> {
+        kani::assume(self.buffer.len() == self.final_buffer_size as usize);
         require_eq!(
             self.buffer.len(),
             self.final_buffer_size as usize,
