@@ -10,7 +10,7 @@ crate-type = ["cdylib", "lib"]
 name = "squads_multisig_program"
 
 [features]
-default = ["custom-heap", "kani"]
+default = ["custom-heap"]
 custom-heap = []
 no-entrypoint = []
 no-idl = []

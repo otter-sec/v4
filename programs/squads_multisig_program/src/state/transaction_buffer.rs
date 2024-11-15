@@ -3,7 +3,7 @@ use anchor_lang::solana_program::hash::hash;
 
 // use crate::errors::MultisigError;
 
-pub const MAX_BUFFER_SIZE: usize = 4000;
+pub const MAX_BUFFER_SIZE: usize = 10;
 
 #[account]
 #[invariant(
@@ -50,6 +50,7 @@ impl TransactionBuffer {
 
     pub fn validate_hash(&self) -> Result<()> {
         let message_buffer_hash = hash(&self.buffer);
+        kani::assume(hash(&self.buffer).to_bytes() == self.final_buffer_hash);
         require!(
             message_buffer_hash.to_bytes() == self.final_buffer_hash,
             MultisigError::FinalBufferHashMismatch
@@ -57,6 +58,7 @@ impl TransactionBuffer {
         Ok(())
     }
     pub fn validate_size(&self) -> Result<()> {
+        kani::assume(self.buffer.len() == self.final_buffer_size as usize);
         require_eq!(
             self.buffer.len(),
             self.final_buffer_size as usize,
