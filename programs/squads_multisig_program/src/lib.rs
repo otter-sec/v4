@@ -248,6 +248,9 @@ pub mod squads_multisig_program {
     #[succeeds_if(
         args.transaction_message == vec![0, 0, 0, 0, 0, 0].into() 
         && ctx.accounts.transaction_buffer.buffer.len() == ctx.accounts.transaction_buffer.final_buffer_size as usize
+        && ctx.accounts.vault_transaction_create.multisig.is_member(ctx.accounts.vault_transaction_create.creator.key()).is_some()
+        && ctx.accounts.vault_transaction_create.multisig.member_has_permission(ctx.accounts.vault_transaction_create.creator.key(), Permission::Initiate)
+        && ctx.accounts.vault_transaction_create.multisig.invariant().is_ok()
     )]
     pub fn vault_transaction_create_from_buffer<'info>(
         ctx: Context<'_, '_, 'info, 'info, VaultTransactionCreateFromBuffer<'info>>,

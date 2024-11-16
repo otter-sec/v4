@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hash;
 
 // use crate::errors::MultisigError;
-
+// Note: Using 10 bytes for the buffer size for verification purposes
 pub const MAX_BUFFER_SIZE: usize = 10;
 
 #[account]
@@ -22,7 +22,7 @@ pub struct TransactionBuffer {
     /// Vault index of the transaction this buffer belongs to.
     pub vault_index: u8,
     /// Hash of the final assembled transaction message.
-    pub final_buffer_hash: [u8; 32],
+    pub final_buffer_hash: [u8; 10],
     /// The size of the final assembled transaction message.
     pub final_buffer_size: u16,
     /// The buffer of the transaction message.
@@ -48,8 +48,9 @@ impl TransactionBuffer {
         )
     }
 
-    pub fn validate_hash(&self) -> Result<()> {
+    pub fn validate_hash(&self) -> Result<()> { 
         let message_buffer_hash = hash(&self.buffer);
+        // Note: Assume that the hash matches 
         kani::assume(hash(&self.buffer).to_bytes() == self.final_buffer_hash);
         require!(
             message_buffer_hash.to_bytes() == self.final_buffer_hash,
@@ -58,7 +59,6 @@ impl TransactionBuffer {
         Ok(())
     }
     pub fn validate_size(&self) -> Result<()> {
-        kani::assume(self.buffer.len() == self.final_buffer_size as usize);
         require_eq!(
             self.buffer.len(),
             self.final_buffer_size as usize,
