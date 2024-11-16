@@ -11,7 +11,7 @@ pub struct TransactionBufferCreateArgs {
     /// Index of the vault this transaction belongs to.
     pub vault_index: u8,
     /// Hash of the final assembled transaction message.
-    pub final_buffer_hash: [u8; 32],
+    pub final_buffer_hash: [u8; 10], // Note: Using 10 bytes for verification
     /// Final size of the buffer.
     pub final_buffer_size: u16,
     /// Initial slice of the buffer.
