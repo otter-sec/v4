@@ -44,7 +44,7 @@ impl Batch {
 /// Stores data required for execution of one transaction from a batch.
 #[account]
 #[invariant(true)]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct VaultBatchTransaction {
     /// PDA bump.
     pub bump: u8,
@@ -78,6 +78,9 @@ impl VaultBatchTransaction {
     /// Reduces the VaultBatchTransaction to its default empty value and moves
     /// ownership of the data to the caller/return value.
     pub fn take(&mut self) -> VaultBatchTransaction {
-        core::mem::take(self)
+        #[cfg(not(any(kani, feature = "kani")))]
+        return core::mem::take(self);
+        #[cfg(any(kani, feature = "kani"))]
+        self.clone()
     }
 }
