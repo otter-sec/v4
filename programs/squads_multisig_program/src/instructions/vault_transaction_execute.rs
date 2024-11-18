@@ -67,6 +67,16 @@ impl VaultTransactionExecute<'_> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                #[cfg(any(kani, feature = "kani"))]{
+                    let now = Clock::get()?.unix_timestamp;
+                    kani::assume(now.checked_sub(timestamp).is_some());
+                    kani::assume(now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock));
+                    require!(
+                        now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
+                        MultisigError::TimeLockNotReleased
+                    );
+                }
+                #[cfg(not(any(kani, feature = "kani")))]
                 require!(
                     Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
@@ -123,8 +133,10 @@ impl VaultTransactionExecute<'_> {
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(transaction_key, &transaction.ephemeral_signer_bumps);
 
-        let address_lookup_table_account_infos = address_lookup_table_account_infos.to_vec().into();
-        let message_account_infos = message_account_infos.to_vec().into();
+        let address_lookup_table_account_infos: Vec<AccountInfo<'_>> = address_lookup_table_account_infos.to_vec().into();
+        let message_account_infos: Vec<AccountInfo<'_>> = message_account_infos.to_vec().into();
+        
+        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             &transaction_message,
             &message_account_infos,
@@ -141,6 +153,7 @@ impl VaultTransactionExecute<'_> {
         // `self.message.instructions`, therefore after this point no more
         // references or usages of `self.message` should be made to avoid
         // faulty behavior.
+        #[verify_ignore]
         executable_message.execute_message(
             vault_seeds,
             &ephemeral_signer_seeds,

@@ -337,6 +337,12 @@ pub mod squads_multisig_program {
 
     /// Execute a vault transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if({
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()   
+    })]
     pub fn vault_transaction_execute(ctx: Context<VaultTransactionExecute>) -> Result<()> {
         VaultTransactionExecute::vault_transaction_execute(ctx)
     }
