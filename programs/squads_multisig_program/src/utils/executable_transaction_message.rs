@@ -37,6 +37,9 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
     ) -> Result<Self> {
         // CHECK: `address_lookup_table_account_infos` must be valid `AddressLookupTable`s
         //         and be the ones mentioned in `message.address_table_lookups`.
+        kani::assume(ephemeral_signer_pdas.len() == 2);
+        kani::assume(message.address_table_lookups.len() == 2);
+        kani::assume(address_lookup_table_account_infos.len() == 2);
         require_eq!(
             address_lookup_table_account_infos.len(),
             message.address_table_lookups.len(),
@@ -47,11 +50,19 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             .enumerate()
             .map(|(index, maybe_lookup_table)| {
                 // The lookup table account must be owned by SolanaAddressLookupTableProgram.
+                kani::assume(maybe_lookup_table.owner == &address_lookup_table::program::ID);
                 require!(
                     maybe_lookup_table.owner == &address_lookup_table::program::ID,
                     MultisigError::InvalidAccount
                 );
                 // The lookup table must be mentioned in `message.address_table_lookups` at the same index.
+                kani::assume(
+                    message
+                        .address_table_lookups
+                        .get(index)
+                        .map(|lookup| &lookup.account_key)
+                        == Some(maybe_lookup_table.key)
+                );
                 require!(
                     message
                         .address_table_lookups
@@ -65,6 +76,8 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             .collect::<Result<HashMap<&Pubkey, &AccountInfo>>>()?;
 
         // CHECK: `account_infos` should exactly match the number of accounts mentioned in the message.
+        kani::assume(message_account_infos.len() <= 3);
+        kani::assume(message_account_infos.len() == message.num_all_account_keys());
         require_eq!(
             message_account_infos.len(),
             message.num_all_account_keys(),
@@ -74,8 +87,10 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         let mut static_accounts = Vec::new();
 
         // CHECK: `message.account_keys` should come first in `account_infos` and have modifiers expected by the message.
+        kani::assume(message.account_keys.len() <= 3);
         for (i, account_key) in message.account_keys.iter().enumerate() {
             let account_info = &message_account_infos[i];
+            kani::assume(*account_info.key == *account_key);
             require_keys_eq!(
                 *account_info.key,
                 *account_key,
@@ -88,10 +103,12 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                 && account_info.key != vault_pubkey
                 && !ephemeral_signer_pdas.contains(account_info.key)
             {
+                kani::assume(account_info.is_signer);
                 require!(account_info.is_signer, MultisigError::InvalidAccount);
             }
             // If the account is marked as writable in the message, it must be writable in the account infos too.
             if message.is_static_writable_index(i) {
+                kani::assume(account_info.is_writable);
                 require!(account_info.is_writable, MultisigError::InvalidAccount);
             }
             static_accounts.push(*account_info);
@@ -114,10 +131,13 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             let lookup_table = AddressLookupTable::deserialize(lookup_table_data)
                 .map_err(|_| MultisigError::InvalidAccount)?;
 
+            kani::assume(lookup_table.addresses.len() <= 2);
+            kani::assume(lookup.writable_indexes.len() <= 2);
             // Accounts listed as writable in lookup, should be loaded as writable.
             for (i, index_in_lookup_table) in lookup.writable_indexes.iter().enumerate() {
                 // Check the modifiers.
                 let index = message_indexes_cursor + i;
+                kani::assume(message_account_infos.get(index).unwrap().is_writable);
                 let loaded_account_info = &message_account_infos
                     .get(index)
                     .ok_or(MultisigError::InvalidNumberOfAccounts)?;
@@ -127,10 +147,17 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                     MultisigError::InvalidAccount
                 );
                 // Check that the pubkey matches the one from the actual lookup table.
+                kani::assume(
+                    lookup_table
+                        .addresses
+                        .get(usize::from(*index_in_lookup_table))
+                        .unwrap()
+                        == loaded_account_info.key,
+                );
                 let pubkey_from_lookup_table = lookup_table
                     .addresses
                     .get(usize::from(*index_in_lookup_table))
-                    .ok_or(MultisigError::InvalidAccount)?;
+                    .unwrap();
                 require_keys_eq!(
                     *loaded_account_info.key,
                     *pubkey_from_lookup_table,
@@ -142,13 +169,22 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             message_indexes_cursor += lookup.writable_indexes.len();
 
             // Accounts listed as readonly in lookup.
+            kani::assume(lookup.readonly_indexes.len() <= 3);
             for (i, index_in_lookup_table) in lookup.readonly_indexes.iter().enumerate() {
                 // Check the modifiers.
                 let index = message_indexes_cursor + i;
+                kani::assume(!message_account_infos.get(index).unwrap().is_writable);
                 let loaded_account_info = &message_account_infos
                     .get(index)
                     .ok_or(MultisigError::InvalidNumberOfAccounts)?;
                 // Check that the pubkey matches the one from the actual lookup table.
+                kani::assume(
+                    lookup_table
+                        .addresses
+                        .get(usize::from(*index_in_lookup_table))
+                        .ok_or(MultisigError::InvalidAccount)?
+                        == loaded_account_info.key,
+                );
                 let pubkey_from_lookup_table = lookup_table
                     .addresses
                     .get(usize::from(*index_in_lookup_table))
@@ -203,11 +239,14 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         for (ix, account_infos) in self.to_instructions_and_accounts().iter() {
             // Make sure we don't pass protected accounts as writable to CPI calls.
             for account_meta in ix.accounts.iter().filter(|m| m.is_writable) {
+                #[cfg(any(kani, feature = "kani"))]
+                kani::assume(!protected_accounts.contains(&account_meta.pubkey));
                 require!(
                     !protected_accounts.contains(&account_meta.pubkey),
                     MultisigError::ProtectedAccount
                 );
             }
+            #[cfg(not(any(kani, feature = "kani")))]
             invoke_signed(&ix, &account_infos, &signer_seeds)?;
         }
         Ok(())
@@ -254,15 +293,17 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
 
     pub fn to_instructions_and_accounts(&self) -> Vec<(Instruction, Vec<AccountInfo<'info>>)> {
         let mut executable_instructions = vec![];
-
+        kani::assume(self.message.instructions.len() == 2);
         for ms_compiled_instruction in self.message.instructions.iter() {
+            kani::assume(ms_compiled_instruction.account_indexes.len() == 2);
             let ix_accounts: Vec<(AccountInfo<'info>, AccountMeta)> = ms_compiled_instruction
                 .account_indexes
                 .iter()
                 .map(|account_index| {
                     let account_index = usize::from(*account_index);
-                    let account_info = self.get_account_by_index(account_index).unwrap();
-
+                    let account_info_wrapped = self.get_account_by_index(account_index);
+                    kani::assume(account_info_wrapped.is_ok());
+                    let account_info = account_info_wrapped.unwrap();
                     // `is_signer` cannot just be taken from the account info, because for `authority`
                     // it's always false in the passed account infos, but might be true in the actual instructions.
                     let is_signer = self.message.is_signer_index(account_index);
@@ -277,10 +318,10 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
                 })
                 .collect();
 
-            let ix_program_account_info = self
-                .get_account_by_index(usize::from(ms_compiled_instruction.program_id_index))
-                .unwrap();
-
+            let ix_program_account_info_wrapped =
+                self.get_account_by_index(usize::from(ms_compiled_instruction.program_id_index));
+            kani::assume(ix_program_account_info_wrapped.is_ok());
+            let ix_program_account_info = ix_program_account_info_wrapped.unwrap();
             let ix = Instruction {
                 program_id: *ix_program_account_info.key,
                 accounts: ix_accounts

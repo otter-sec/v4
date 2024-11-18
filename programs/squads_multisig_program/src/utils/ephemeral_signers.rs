@@ -8,6 +8,7 @@ pub fn derive_ephemeral_signers(
     transaction_key: Pubkey,
     ephemeral_signer_bumps: &[u8],
 ) -> (Vec<Pubkey>, Vec<Vec<Vec<u8>>>) {
+    kani::assume(ephemeral_signer_bumps.len() == 2);
     let signers = ephemeral_signer_bumps
         .iter()
         .enumerate()
