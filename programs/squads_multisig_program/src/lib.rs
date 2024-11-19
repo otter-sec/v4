@@ -603,6 +603,7 @@ pub mod squads_multisig_program {
     pub fn vault_batch_transaction_account_close(
         ctx: Context<VaultBatchTransactionAccountClose>,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size);
         VaultBatchTransactionAccountClose::vault_batch_transaction_account_close(ctx)
     }
 
