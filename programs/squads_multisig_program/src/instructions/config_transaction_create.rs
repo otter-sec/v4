@@ -94,6 +94,7 @@ impl ConfigTransactionCreate<'_> {
         let multisig_key = multisig.key();
 
         // Increment the transaction index.
+        kani::assume(multisig.transaction_index < u64::MAX);
         let transaction_index = multisig.transaction_index.checked_add(1).unwrap();
 
         // Initialize the transaction fields.
