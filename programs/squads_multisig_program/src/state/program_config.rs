@@ -5,8 +5,7 @@ use crate::errors::MultisigError;
 /// Global program configuration account.
 #[account]
 #[invariant(
-    self.authority != Pubkey::default()
-    && self.treasury != Pubkey::default()
+    self.invarinat().is_ok()
 )]
 #[derive(InitSpace)]
 pub struct ProgramConfig {
