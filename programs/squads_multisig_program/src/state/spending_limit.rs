@@ -1,9 +1,14 @@
+use std::default;
+
 use anchor_lang::prelude::*;
 
 // use crate::errors::*;
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.invariant().is_ok()
+)]
+#[derive(Default)]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -46,6 +51,21 @@ pub struct SpendingLimit {
     /// The destination addresses the spending limit is allowed to sent funds to.
     /// If empty, funds can be sent to any address.
     pub destinations: Vec<Pubkey>,
+}
+
+
+impl SpendingLimit {    
+    pub fn try_from(_input: &mut &[u8]) -> Result<Self> {
+        #[cfg(not(feature = "kani"))]
+        {
+            Ok(SpendingLimit::default())
+        }
+        #[cfg(feature = "kani")]
+        {
+            Ok(SpendingLimit::any())
+        }
+    }
+
 }
 
 impl Owner for SpendingLimit {
@@ -97,6 +117,12 @@ pub enum Period {
     Week,
     /// The spending limit is reset every month (30 days).
     Month,
+}
+
+impl default::Default for Period {
+    fn default() -> Self {
+        Period::OneTime
+    }
 }
 
 impl Period {

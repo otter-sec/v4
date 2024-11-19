@@ -83,6 +83,17 @@ pub mod squads_multisig_program {
     }
 
     /// Create a multisig.
+    #[succeeds_if(
+        args.members.len() <= u16::MAX as usize
+        && args.members.windows(2).all(|win| win[0].key != win[1].key)
+        && args.members.iter().all(|m| m.permissions.mask < 8)
+        && args.members.iter().any(|m| m.permissions.has(Permission::Initiate))
+        && args.members.iter().any(|m| m.permissions.has(Permission::Execute))
+        && args.threshold > 0
+        && args.threshold as usize <= args.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+        && args.time_lock <= MAX_TIME_LOCK
+        && ctx.accounts.treasury.key() == ctx.accounts.program_config.treasury
+    )]
     pub fn multisig_create_v2(
         ctx: Context<MultisigCreateV2>,
         args: MultisigCreateArgsV2,
@@ -91,6 +102,14 @@ pub mod squads_multisig_program {
     }
 
     /// Add a new member to the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() <= usize::from(u16::MAX-1)
+        && ctx.accounts.multisig.members.iter().all(|m| m.key != args.new_member.key)
+        && ctx.accounts.system_program.is_some()
+        && ctx.accounts.rent_payer.is_some()
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_member.permissions.mask < 8
+    )]
     pub fn multisig_add_member(
         ctx: Context<MultisigConfig>,
         args: MultisigAddMemberArgs,
@@ -99,6 +118,17 @@ pub mod squads_multisig_program {
     }
 
     /// Remove a member/key from the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.multisig.members.len() > 1
+        && ctx.accounts.multisig.members.iter().any(|m| m.key == args.old_member)
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Execute))
+        && ctx.accounts.multisig.members.iter().any(|m| m.key != args.old_member && m.permissions.has(Permission::Initiate))
+        && ctx.accounts.multisig.members.iter().filter(|m| m.key != args.old_member && m.permissions.has(Permission::Vote)).count() 
+            >= ctx.accounts.multisig.threshold as usize
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.multisig.is_member(args.old_member).is_some()
+        && ctx.accounts.multisig.members.windows(3).all(|win| win[0].key != win[1].key && win[0].key != win[2].key)
+    )]
     pub fn multisig_remove_member(
         ctx: Context<MultisigConfig>,
         args: MultisigRemoveMemberArgs,
@@ -131,6 +161,9 @@ pub mod squads_multisig_program {
     }
 
     /// Set the multisig `rent_collector`.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_set_rent_collector(
         ctx: Context<MultisigConfig>,
         args: MultisigSetRentCollectorArgs,
@@ -139,6 +172,12 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new spending limit for the controlled multisig.
+    #[succeeds_if(
+        args.amount != 0
+        && args.members.len() > 0
+        && args.members.windows(2).all(|win| win[0] != win[1])
+        && ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     pub fn multisig_add_spending_limit(
         ctx: Context<MultisigAddSpendingLimit>,
         args: MultisigAddSpendingLimitArgs,
@@ -147,6 +186,10 @@ pub mod squads_multisig_program {
     }
 
     /// Remove the spending limit from the controlled multisig.
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+    )]
     pub fn multisig_remove_spending_limit(
         ctx: Context<MultisigRemoveSpendingLimit>,
         args: MultisigRemoveSpendingLimitArgs,
@@ -155,6 +198,18 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new config transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.config_authority == Pubkey::default()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && !args.actions.is_empty()
+        && args.actions.iter().all(|action| {
+            if let ConfigAction::SetTimeLock { new_time_lock, .. } = action {
+                *new_time_lock <= MAX_TIME_LOCK
+            } else {
+                true
+            }
+        })
+    )]
     pub fn config_transaction_create(
         ctx: Context<ConfigTransactionCreate>,
         args: ConfigTransactionCreateArgs,
@@ -164,6 +219,13 @@ pub mod squads_multisig_program {
 
     /// Execute a config transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && squads_multisig_program::tx_execute_validation_helper(&ctx).is_ok()
+    )]
     pub fn config_transaction_execute<'info>(
         ctx: Context<'_, '_, 'info, 'info, ConfigTransactionExecute<'info>>,
     ) -> Result<()> {
@@ -171,10 +233,16 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new vault transaction.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn vault_transaction_create(
         ctx: Context<VaultTransactionCreate>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(args.ephemeral_signers < 10);
+        kani::assume(ctx.accounts.multisig.transaction_index < u64::MAX);
         VaultTransactionCreate::vault_transaction_create(ctx, args)
     }
 
@@ -192,6 +260,12 @@ pub mod squads_multisig_program {
     }
 
     /// Extend a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.transaction_buffer.creator == ctx.accounts.creator.key()
+        && args.buffer.len() + ctx.accounts.transaction_buffer.buffer.len() <= ctx.accounts.transaction_buffer.final_buffer_size as usize
+    )]
     pub fn transaction_buffer_extend(
         ctx: Context<TransactionBufferExtend>,
         args: TransactionBufferExtendArgs,
@@ -210,20 +284,38 @@ pub mod squads_multisig_program {
 
     /// Execute a vault transaction.
     /// The transaction must be `Approved`.
+    #[succeeds_if({
+        ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()   
+    })]
     pub fn vault_transaction_execute(ctx: Context<VaultTransactionExecute>) -> Result<()> {
         VaultTransactionExecute::vault_transaction_execute(ctx)
     }
 
     /// Create a new batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+    )]
     pub fn batch_create(ctx: Context<BatchCreate>, args: BatchCreateArgs) -> Result<()> {
         BatchCreate::batch_create(ctx, args)
     }
 
     /// Add a transaction to the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Initiate)
+        && ctx.accounts.batch.creator == ctx.accounts.member.key()
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+    )]
     pub fn batch_add_transaction(
         ctx: Context<BatchAddTransaction>,
         args: BatchAddTransactionArgs,
     ) -> Result<()> {
+        kani::assume(args.ephemeral_signers < 10);
+        kani::assume(ctx.accounts.batch.size < u32::MAX);
         BatchAddTransaction::batch_add_transaction(ctx, args)
     }
 
@@ -233,29 +325,64 @@ pub mod squads_multisig_program {
     }
 
     /// Create a new multisig proposal.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && (
+            ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+            || ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Vote))
+        && args.transaction_index <= ctx.accounts.multisig.transaction_index
+        && args.transaction_index > ctx.accounts.multisig.stale_transaction_index
+    )]
     pub fn proposal_create(ctx: Context<ProposalCreate>, args: ProposalCreateArgs) -> Result<()> {
         ProposalCreate::proposal_create(ctx, args)
     }
 
     /// Update status of a multisig proposal from `Draft` to `Active`.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Initiate)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+        && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+    )]
     pub fn proposal_activate(ctx: Context<ProposalActivate>) -> Result<()> {
         ProposalActivate::proposal_activate(ctx)
     }
 
     /// Approve a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && !ctx.accounts.proposal.approved.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_approve(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_approve(ctx, args)
     }
 
     /// Reject a multisig proposal on behalf of the `member`.
     /// The proposal must be `Active`.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. })
+        && ctx.accounts.proposal.transaction_index > ctx.accounts.multisig.stale_transaction_index
+        && !ctx.accounts.proposal.rejected.contains(&ctx.accounts.member.key())
+    )]
     pub fn proposal_reject(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_reject(ctx, args)
     }
 
     /// Cancel a multisig proposal on behalf of the `member`.
     /// The proposal must be `Approved`.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && !ctx.accounts.proposal.cancelled.contains(&ctx.accounts.member.key())
+
+    )]
     pub fn proposal_cancel(ctx: Context<ProposalVote>, args: ProposalVoteArgs) -> Result<()> {
         ProposalVote::proposal_cancel(ctx, args)
     }
@@ -267,6 +394,12 @@ pub mod squads_multisig_program {
     /// accommodate the new amount of cancel votes.
     /// The previous implemenation still works if the proposal size is in line with the
     /// threshold size.
+    #[succeeds_if(
+        ctx.accounts.proposal_vote.multisig.is_member(ctx.accounts.proposal_vote.member.key()).is_some()
+        && ctx.accounts.proposal_vote.multisig.member_has_permission(ctx.accounts.proposal_vote.member.key(), Permission::Vote)
+        && matches!(ctx.accounts.proposal_vote.proposal.status, ProposalStatus::Approved { .. })
+        && !ctx.accounts.proposal_vote.proposal.cancelled.contains(&ctx.accounts.proposal_vote.member.key())
+    )]
     pub fn proposal_cancel_v2<'info>(
         ctx: Context<'_, '_, 'info, 'info, ProposalCancelV2<'info>>,
         args: ProposalVoteArgs,
@@ -286,6 +419,34 @@ pub mod squads_multisig_program {
     /// `transaction` can be closed if either:
     /// - the `proposal` is in a terminal state: `Executed`, `Rejected`, or `Cancelled`.
     /// - the `proposal` is stale.
+    #[succeeds_if(
+        (
+            !ctx.accounts.proposal.data.borrow.is_empty()
+            && (Proposal::try_deserialize(
+                    &mut &*ctx.accounts.proposal.data.borrow()
+                ).is_ok().is_some()
+            &&
+        (
+            let proposal = Proposal::try_deserialize(
+                &mut &*ctx.accounts.proposal.data.borrow()
+            ).unwrap();
+            (   // Stale and execution not started
+                ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index &&
+                (matches!(proposal.status, ProposalStatus::Draft { .. })
+                || matches!(proposal.status, ProposalStatus::Active { .. })
+                || matches!(proposal.status, ProposalStatus::Approved { .. })
+                )
+            ) // Terminal state 
+            || matches!(proposal.status, ProposalStatus::Executed { .. })            
+            || matches!(proposal.status, ProposalStatus::Rejected { .. })
+            || matches!(proposal.status, ProposalStatus::Cancelled { .. })
+            && !matches!(proposal.status, ProposalStatus::Executing { .. }) // Not executing
+        )) ||
+        (
+            ctx.accounts.proposal.data.borrow().is_empty() && 
+            ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index 
+        ))
+    )]
     pub fn config_transaction_accounts_close(
         ctx: Context<ConfigTransactionAccountsClose>,
     ) -> Result<()> {
@@ -320,5 +481,137 @@ pub mod squads_multisig_program {
     /// in the `batch` are already closed: `batch.size == 0`.
     pub fn batch_accounts_close(ctx: Context<BatchAccountsClose>) -> Result<()> {
         BatchAccountsClose::batch_accounts_close(ctx)
+    }
+
+
+
+    pub fn tx_execute_validation_helper<'info>(
+        ctx: &Context<'_, '_, '_, 'info, ConfigTransactionExecute<'info>>,
+    ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.actions.len() <= 3);
+        kani::assume(ctx.accounts.multisig.members.len() <= 5);
+        kani::assume(ctx.remaining_accounts.len() <= 3);
+        kani::assume(
+            ctx.accounts.multisig.members.len()
+                + ctx
+                    .accounts
+                    .transaction
+                    .actions
+                    .iter()
+                    .filter(|&action| matches!(action, ConfigAction::AddMember { .. }))
+                    .count()
+                <= 10,
+        );
+
+        let mut threshold = ctx.accounts.multisig.threshold;
+        let members_after = ctx.accounts.transaction.actions.iter().fold(
+            Some(ctx.accounts.multisig.members),
+            |acc, action| match acc {
+                Some(mut members) => match action {
+                    ConfigAction::AddMember { new_member } => {
+                        members.push(*new_member);
+                        Some(members)
+                    }
+                    ConfigAction::RemoveMember { old_member } => {
+                        if let Some(index) = members.iter().position(|m| m.key == *old_member) {
+                            members.remove(index);
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::ChangeThreshold { new_threshold } => {
+                        threshold = *new_threshold;
+                        Some(members)
+                    }
+                    ConfigAction::SetTimeLock { new_time_lock }=> {
+                        if *new_time_lock <= MAX_TIME_LOCK {
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::AddSpendingLimit {
+                        create_key: _,
+                        vault_index: _,
+                        mint: _,
+                        amount: _,
+                        period: _,
+                        members: spending_limit_members,
+                        destinations: _,
+                    } => {
+                        kani::assume(spending_limit_members.len() <= 2);
+                        if !spending_limit_members.is_empty()
+                            && !spending_limit_members
+                                .windows(2)
+                                .any(|win| win[0] == win[1])
+                            && ctx.accounts.system_program.is_some()
+                            && ctx.accounts.rent_payer.is_some()
+                        {
+                            Some(members)
+                        } else {
+                            None
+                        }
+                    }
+                    ConfigAction::RemoveSpendingLimit {
+                        spending_limit: spending_limit_key,
+                    } => {
+                        let spending_limit_account = ctx
+                            .remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == spending_limit_key);
+                        if let Some(account) = spending_limit_account {
+                            if ctx.accounts.rent_payer.is_some()
+                                && Account::<SpendingLimit>::try_from(account)
+                                    .map_or(false, |acc| {
+                                        acc.multisig == ctx.accounts.multisig.key()
+                                    })
+                            {
+                                Some(members)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    }
+                    _ => Some(members),
+                },
+                None => None,
+            },
+        );
+
+        let are_members_after_ok = match members_after {
+            Some(valid_members) => {
+                !valid_members.windows(2).any(|win| win[0].key == win[1].key)
+                    && valid_members.len() > 0
+                    && valid_members.len() <= usize::from(u16::MAX)
+                    && valid_members
+                        .iter()
+                        .any(|m| m.permissions.has(Permission::Execute))
+                    && valid_members
+                        .iter()
+                        .any(|m| m.permissions.has(Permission::Initiate))
+                    && valid_members
+                        .iter()
+                        .filter(|m| m.permissions.has(Permission::Vote))
+                        .count()
+                        >= threshold as usize
+                    && valid_members.iter().all(|m| m.permissions.mask < 8)
+                    && if valid_members.len() > ctx.accounts.multisig.members.len() {
+                        ctx.accounts.system_program.is_some() && ctx.accounts.rent_payer.is_some()
+                    } else {
+                        true
+                    }
+                    && threshold > 0
+            }
+            None => false,
+        };
+
+        if are_members_after_ok {
+            Ok(())
+        } else {
+            Err(Error::AccountDidNotSerialize)
+        }
     }
 }

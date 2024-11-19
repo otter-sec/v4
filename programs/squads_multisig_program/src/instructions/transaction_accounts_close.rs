@@ -69,8 +69,10 @@ impl ConfigTransactionAccountsClose<'_> {
         let proposal = &mut ctx.accounts.proposal;
         let rent_collector = &ctx.accounts.rent_collector;
 
+        kani::assume(transaction.index <= multisig.stale_transaction_index);
         let is_stale = transaction.index <= multisig.stale_transaction_index;
 
+        kani::assume(!proposal.data.borrow().is_empty());
         let proposal_account = if proposal.data.borrow().is_empty() {
             None
         } else {

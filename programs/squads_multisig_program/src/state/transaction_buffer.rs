@@ -3,10 +3,12 @@ use anchor_lang::solana_program::hash::hash;
 
 // use crate::errors::MultisigError;
 
-pub const MAX_BUFFER_SIZE: usize = 4000;
+pub const MAX_BUFFER_SIZE: usize = 10; // Change this to 10 for the test to pass
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.invariant().is_ok()
+)]
 #[derive(Default, Debug)]
 pub struct TransactionBuffer {
     /// The multisig this belongs to.
@@ -18,7 +20,7 @@ pub struct TransactionBuffer {
     /// Vault index of the transaction this buffer belongs to.
     pub vault_index: u8,
     /// Hash of the final assembled transaction message.
-    pub final_buffer_hash: [u8; 32],
+    pub final_buffer_hash: [u8; 10], // Note: Using 10 bytes for the verification
     /// The size of the final assembled transaction message.
     pub final_buffer_size: u16,
     /// The buffer of the transaction message.

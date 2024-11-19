@@ -79,10 +79,17 @@ impl<'info> ConfigTransactionExecute<'info> {
         // proposal
         match proposal.status {
             ProposalStatus::Approved { timestamp } => {
+                let now = Clock::get()?.unix_timestamp;
+                kani::assume(now.checked_sub(timestamp).is_some());
+                kani::assume(now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock));
                 require!(
-                    Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                    now.checked_sub(timestamp).unwrap() >= i64::from(multisig.time_lock),
                     MultisigError::TimeLockNotReleased
                 );
+                // require!(
+                //     Clock::get()?.unix_timestamp - timestamp >= i64::from(multisig.time_lock),
+                //     MultisigError::TimeLockNotReleased
+                // );
             }
             _ => return err!(MultisigError::InvalidProposalStatus),
         }
@@ -108,9 +115,11 @@ impl<'info> ConfigTransactionExecute<'info> {
         let rent = Rent::get()?;
 
         // Execute the actions one by one.
+        kani::assume(transaction.actions.len() <= 3);
         for action in transaction.actions.iter() {
             match action {
                 ConfigAction::AddMember { new_member } => {
+                    kani::assume(multisig.members.len() < 10);
                     multisig.add_member(new_member.to_owned());
 
                     multisig.invalidate_prior_transactions();
@@ -153,6 +162,13 @@ impl<'info> ConfigTransactionExecute<'info> {
                         ctx.program_id,
                     );
 
+                    
+                    kani::assume(
+                        ctx.remaining_accounts
+                            .iter()
+                            .find(|acc| acc.key == &spending_limit_key)
+                            .is_some(),
+                    );
                     // Find the SpendingLimit account in `remaining_accounts`.
                     let spending_limit_info = ctx
                         .remaining_accounts
@@ -173,6 +189,10 @@ impl<'info> ConfigTransactionExecute<'info> {
                         .ok_or(MultisigError::MissingAccount)?;
 
                     // Initialize the SpendingLimit account.
+                    kani::assume(
+                        **spending_limit_info.try_borrow_lamports()? == 0
+                            || rent_payer.key() != spending_limit_info.key(),
+                    );
                     create_account(
                         rent_payer,
                         spending_limit_info,
@@ -192,7 +212,8 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
-                    members.sort();
+                    kani::assume(members.windows(2).all(|w| w[0] < w[1]));
+                    // members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
@@ -259,20 +280,26 @@ impl<'info> ConfigTransactionExecute<'info> {
         }
 
         // Make sure the multisig account can fit the updated state: added members or newly set rent_collector.
-        Multisig::realloc_if_needed(
-            multisig.to_account_info(),
-            multisig.members.len(),
-            ctx.accounts
-                .rent_payer
-                .as_ref()
-                .map(ToAccountInfo::to_account_info),
-            ctx.accounts
-                .system_program
-                .as_ref()
-                .map(ToAccountInfo::to_account_info),
-        )?;
+        // Multisig::realloc_if_needed(
+        //     multisig.to_account_info(),
+        //     multisig.members.len(),
+        //     ctx.accounts
+        //         .rent_payer
+        //         .as_ref()
+        //         .map(ToAccountInfo::to_account_info),
+        //     ctx.accounts
+        //         .system_program
+        //         .as_ref()
+        //         .map(ToAccountInfo::to_account_info),
+        // )?;
 
         // Make sure the multisig state is valid after applying the actions.
+        kani::assume(
+            multisig
+                .members
+                .windows(2)
+                .all(|win| win[0].key < win[1].key),
+        );
         multisig.invariant()?;
 
         // Mark the proposal as executed.

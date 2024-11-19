@@ -9,7 +9,9 @@ use crate::id;
 pub const MAX_TIME_LOCK: u32 = 3 * 30 * 24 * 60 * 60; // 3 months
 
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.invariant().is_ok()
+)]
 #[derive(Clone)]
 pub struct Multisig {
     /// Key that is used to seed the multisig PDA.
@@ -230,8 +232,10 @@ impl Multisig {
     }
 
     /// Add `new_member` to the multisig `members` vec and sort the vec.
+    #[helper_fn]
     pub fn add_member(&mut self, new_member: Member) {
         self.members.push(new_member);
+        #[verify_ignore]
         self.members.sort_by_key(|m| m.key);
     }
 

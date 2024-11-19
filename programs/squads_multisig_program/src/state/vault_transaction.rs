@@ -8,8 +8,11 @@ use crate::instructions::{CompiledInstruction, MessageAddressTableLookup, Transa
 /// Vault transaction is a transaction that's executed on behalf of the multisig vault PDA
 /// and wraps arbitrary Solana instructions, typically calling into other Solana programs.
 #[account]
-#[invariant(true)]
-#[derive(Default)]
+#[invariant(
+    self.message.num_signers as usize <= self.message.account_keys.len()
+    && self.message.num_writable_signers <= self.message.num_signers
+)]
+#[derive(Default, Clone)]
 pub struct VaultTransaction {
     /// The multisig this belongs to.
     pub multisig: Pubkey,
@@ -56,7 +59,10 @@ impl VaultTransaction {
     /// Reduces the VaultTransaction to its default empty value and moves
     /// ownership of the data to the caller/return value.
     pub fn take(&mut self) -> VaultTransaction {
-        core::mem::take(self)
+        #[cfg(not(any(kani, feature = "kani")))]
+        return core::mem::take(self);
+        #[cfg(any(kani, feature = "kani"))]
+        self.clone()
     }
 }
 

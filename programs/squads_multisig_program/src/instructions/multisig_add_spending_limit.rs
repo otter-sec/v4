@@ -35,7 +35,7 @@ pub struct MultisigAddSpendingLimit<'info> {
         seeds = [SEED_PREFIX, SEED_MULTISIG, multisig.create_key.as_ref()],
         bump = multisig.bump,
     )]
-    multisig: Account<'info, Multisig>,
+    pub multisig: Account<'info, Multisig>,
 
     /// Multisig `config_authority` that must authorize the configuration change.
     pub config_authority: Signer<'info>,
@@ -87,6 +87,7 @@ impl MultisigAddSpendingLimit<'_> {
 
         // Make sure there are no duplicate keys in this direct invocation by sorting so the invariant will catch
         let mut sorted_members = args.members;
+        #[verify_ignore]
         sorted_members.sort();
 
         spending_limit.multisig = ctx.accounts.multisig.key();
