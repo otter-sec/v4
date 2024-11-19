@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[invariant(
-    self.invarinat().is_ok()
+    self.invariant().is_ok()
 )]
 pub struct SpendingLimit {
     /// The multisig this belongs to.
