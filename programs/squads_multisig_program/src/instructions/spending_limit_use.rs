@@ -149,12 +149,13 @@ impl SpendingLimitUse<'_> {
 
         // Reset `spending_limit.remaining_amount` if the `spending_limit.period` has passed.
         if let Some(reset_period) = spending_limit.period.to_seconds() {
-            kani::assume(now > spending_limit.last_reset);
+            kani::assume(now.checked_sub(spending_limit.last_reset).is_some());
             let passed_since_last_reset = now.checked_sub(spending_limit.last_reset).unwrap();
 
             if passed_since_last_reset > reset_period {
                 spending_limit.remaining_amount = spending_limit.amount;
 
+                kani::assume(passed_since_last_reset.checked_div(reset_period).is_some());
                 let periods_passed = passed_since_last_reset.checked_div(reset_period).unwrap();
 
                 // last_reset = last_reset + periods_passed * reset_period,
@@ -174,6 +175,7 @@ impl SpendingLimitUse<'_> {
 
         // Update `spending_limit.remaining_amount`.
         // This will also check if `amount` doesn't exceed `spending_limit.remaining_amount`.
+        kani::assume(spending_limit.remaining_amount.checked_sub(args.amount).is_some());
         spending_limit.remaining_amount = spending_limit
             .remaining_amount
             .checked_sub(args.amount)
