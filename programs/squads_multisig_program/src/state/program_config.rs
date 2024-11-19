@@ -4,7 +4,9 @@ use crate::errors::MultisigError;
 
 /// Global program configuration account.
 #[account]
-#[invariant(true)]
+#[invariant(
+    self.invariant().is_ok()
+)]
 #[derive(InitSpace)]
 pub struct ProgramConfig {
     /// The authority which can update the config.

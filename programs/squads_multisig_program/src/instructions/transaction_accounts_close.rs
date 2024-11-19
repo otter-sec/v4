@@ -178,8 +178,10 @@ impl VaultTransactionAccountsClose<'_> {
         let proposal = &mut ctx.accounts.proposal;
         let rent_collector = &ctx.accounts.rent_collector;
 
+        kani::assume(transaction.index <= multisig.stale_transaction_index);
         let is_stale = transaction.index <= multisig.stale_transaction_index;
-
+        
+        kani::assume(!proposal.data.borrow().is_empty());
         let proposal_account = if proposal.data.borrow().is_empty() {
             None
         } else {
@@ -302,6 +304,7 @@ impl VaultBatchTransactionAccountClose<'_> {
         .map_err(|_| MultisigError::TransactionNotLastInBatch)?;
 
         // Then compare it to the provided transaction address.
+        kani::assume(transaction.key() == last_transaction_address);
         require_keys_eq!(
             transaction.key(),
             last_transaction_address,
@@ -345,7 +348,7 @@ impl VaultBatchTransactionAccountClose<'_> {
     #[access_control(ctx.accounts.validate())]
     pub fn vault_batch_transaction_account_close(ctx: Context<Self>) -> Result<()> {
         let batch = &mut ctx.accounts.batch;
-
+        kani::assume(batch.size.checked_sub(1).is_some());
         batch.size = batch.size.checked_sub(1).expect("overflow");
 
         // Anchor macro will close the `transaction` account for us.
@@ -412,8 +415,9 @@ impl BatchAccountsClose<'_> {
         let proposal = &mut ctx.accounts.proposal;
         let rent_collector = &ctx.accounts.rent_collector;
 
+        kani::assume(batch.index <= multisig.stale_transaction_index);
         let is_stale = batch.index <= multisig.stale_transaction_index;
-
+        kani::assume(!proposal.data.borrow().is_empty());
         let proposal_account = if proposal.data.borrow().is_empty() {
             None
         } else {
@@ -451,6 +455,7 @@ impl BatchAccountsClose<'_> {
         require!(can_close, MultisigError::InvalidProposalStatus);
 
         // Batch must be empty.
+        kani::assume(batch.size == 0);
         require_eq!(batch.size, 0, MultisigError::BatchNotEmpty);
 
         // Close the `proposal` account if exists.

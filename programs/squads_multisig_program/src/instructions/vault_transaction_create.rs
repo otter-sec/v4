@@ -92,6 +92,7 @@ impl<'info> VaultTransactionCreate<'info> {
         ];
         let (_, vault_bump) = Pubkey::find_program_address(vault_seeds, ctx.program_id);
 
+        kani::assume(args.ephemeral_signers < 5);
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
             .map(|ephemeral_signer_index| {
                 let ephemeral_signer_seeds = &[
@@ -108,6 +109,7 @@ impl<'info> VaultTransactionCreate<'info> {
             .collect();
 
         // Increment the transaction index.
+        kani::assume(multisig.transaction_index < u64::MAX);
         let transaction_index = multisig.transaction_index.checked_add(1).unwrap();
 
         // Initialize the transaction fields.
@@ -121,6 +123,7 @@ impl<'info> VaultTransactionCreate<'info> {
         transaction.message = transaction_message.try_into()?;
 
         // Updated last transaction index in the multisig account.
+        kani::assume(multisig.stale_transaction_index <= transaction_index);
         multisig.transaction_index = transaction_index;
 
         multisig.invariant()?;

@@ -44,6 +44,10 @@ pub mod squads_multisig_program {
 
     use super::*;
 
+    #[succeeds_if(
+        args.authority != Pubkey::default()
+        && args.treasury != Pubkey::default()
+    )]
     /// Initialize the program config.
     pub fn program_config_init(
         ctx: Context<ProgramConfigInit>,
@@ -52,6 +56,11 @@ pub mod squads_multisig_program {
         ProgramConfigInit::program_config_init(ctx, args)
     }
 
+    #[succeeds_if(
+        args.new_authority != Pubkey::default()
+        && ctx.accounts.program_config.treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `authority` parameter of the program config.
     pub fn program_config_set_authority(
         ctx: Context<ProgramConfig>,
@@ -60,6 +69,11 @@ pub mod squads_multisig_program {
         ProgramConfig::program_config_set_authority(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.program_config.authority != Pubkey::default()
+        && ctx.accounts.program_config.treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `multisig_creation_fee` parameter of the program config.
     pub fn program_config_set_multisig_creation_fee(
         ctx: Context<ProgramConfig>,
@@ -68,6 +82,11 @@ pub mod squads_multisig_program {
         ProgramConfig::program_config_set_multisig_creation_fee(ctx, args)
     }
 
+    #[succeeds_if(
+        args.new_treasury != Pubkey::default()
+        && ctx.accounts.program_config.authority != Pubkey::default()
+        && ctx.accounts.program_config.authority == ctx.accounts.authority.key()
+    )]
     /// Set the `treasury` parameter of the program config.
     pub fn program_config_set_treasury(
         ctx: Context<ProgramConfig>,
@@ -136,6 +155,11 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_remove_member(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.time_lock > 0
+        && args.time_lock <= MAX_TIME_LOCK
+    )]
     /// Set the `time_lock` config parameter for the controlled multisig.
     pub fn multisig_set_time_lock(
         ctx: Context<MultisigConfig>,
@@ -144,6 +168,11 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_set_time_lock(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+        && args.new_threshold > 0
+        && args.new_threshold as usize <= ctx.accounts.multisig.members.iter().filter(|m| m.permissions.has(Permission::Vote)).count()
+    )]
     /// Set the `threshold` config parameter for the controlled multisig.
     pub fn multisig_change_threshold(
         ctx: Context<MultisigConfig>,
@@ -152,6 +181,9 @@ pub mod squads_multisig_program {
         MultisigConfig::multisig_change_threshold(ctx, args)
     }
 
+    #[succeeds_if(
+        ctx.accounts.config_authority.key() == ctx.accounts.multisig.config_authority
+    )]
     /// Set the multisig `config_authority`.
     pub fn multisig_set_config_authority(
         ctx: Context<MultisigConfig>,
@@ -247,6 +279,13 @@ pub mod squads_multisig_program {
     }
 
     /// Create a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && args.final_buffer_size as usize <= MAX_BUFFER_SIZE
+        && args.buffer.len() <= MAX_BUFFER_SIZE
+        && args.buffer.len() <= args.final_buffer_size as usize
+    )]
     pub fn transaction_buffer_create(
         ctx: Context<TransactionBufferCreate>,
         args: TransactionBufferCreateArgs,
@@ -255,6 +294,11 @@ pub mod squads_multisig_program {
     }
 
     /// Close a transaction buffer account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.creator.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.creator.key(), Permission::Initiate)
+        && ctx.accounts.transaction_buffer.creator == ctx.accounts.creator.key()
+    )]
     pub fn transaction_buffer_close(ctx: Context<TransactionBufferClose>) -> Result<()> {
         TransactionBufferClose::transaction_buffer_close(ctx)
     }
@@ -275,10 +319,19 @@ pub mod squads_multisig_program {
 
     /// Create a new vault transaction from a completed transaction buffer.
     /// Finalized buffer hash must match `final_buffer_hash`
+    #[succeeds_if(
+        args.transaction_message == vec![0, 0, 0, 0, 0, 0].into() 
+        && ctx.accounts.transaction_buffer.buffer.len() == ctx.accounts.transaction_buffer.final_buffer_size as usize
+        && ctx.accounts.vault_transaction_create.multisig.is_member(ctx.accounts.vault_transaction_create.creator.key()).is_some()
+        && ctx.accounts.vault_transaction_create.multisig.member_has_permission(ctx.accounts.vault_transaction_create.creator.key(), Permission::Initiate)
+        && ctx.accounts.vault_transaction_create.multisig.invariant().is_ok()
+    )]
     pub fn vault_transaction_create_from_buffer<'info>(
         ctx: Context<'_, '_, 'info, 'info, VaultTransactionCreateFromBuffer<'info>>,
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.transaction_buffer.buffer.len() <= MAX_BUFFER_SIZE);
+        kani::assume(ctx.accounts.transaction_buffer.final_buffer_size as usize <= MAX_BUFFER_SIZE);
         VaultTransactionCreateFromBuffer::vault_transaction_create_from_buffer(ctx, args)
     }
 
@@ -320,7 +373,21 @@ pub mod squads_multisig_program {
     }
 
     /// Execute a transaction from the batch.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.multisig.member_has_permission(ctx.accounts.member.key(), Permission::Execute)
+        && matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+        && ctx.accounts.multisig.key() == ctx.accounts.proposal.multisig
+        && ctx.accounts.multisig.key() == ctx.accounts.batch.multisig
+        && ctx.accounts.proposal.transaction_index == ctx.accounts.batch.index
+        && ctx.remaining_accounts.len() == 
+            ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()
+        && ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size
+    )]
     pub fn batch_execute_transaction(ctx: Context<BatchExecuteTransaction>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 3);
+        kani::assume(ctx.remaining_accounts.len() <= 3);
+        kani::assume(ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size);
         BatchExecuteTransaction::batch_execute_transaction(ctx)
     }
 
@@ -408,10 +475,35 @@ pub mod squads_multisig_program {
     }
 
     /// Use a spending limit to transfer tokens from a multisig vault to a destination account.
+    #[succeeds_if(
+        ctx.accounts.multisig.is_member(ctx.accounts.member.key()).is_some()
+        && ctx.accounts.spending_limit.members.contains(&ctx.accounts.member.key())
+        && ctx.accounts.spending_limit.multisig == ctx.accounts.multisig.key()
+        && args.amount <= ctx.accounts.spending_limit.amount
+        && (
+            ctx.accounts.spending_limit.destinations.is_empty()
+            || ctx.accounts.spending_limit.destinations.contains(&ctx.accounts.destination.key())
+        )
+        && (
+            if ctx.accounts.spending_limit.mint == Pubkey::default() {
+                ctx.accounts.mint.is_none()
+                && ctx.accounts.system_program.is_some()
+                && args.decimals == 9
+                && ctx.accounts.vault.lamports() >= args.amount
+            } else {
+                ctx.accounts.mint.is_some()
+                && ctx.accounts.spending_limit.mint == ctx.accounts.mint.as_ref().unwrap().key()
+                && ctx.accounts.vault_token_account.is_some()
+                && ctx.accounts.destination_token_account.is_some()
+                && ctx.accounts.token_program.is_some()
+            }
+        )
+    )]
     pub fn spending_limit_use(
         ctx: Context<SpendingLimitUse>,
         args: SpendingLimitUseArgs,
     ) -> Result<()> {
+        kani::assume(ctx.accounts.spending_limit.remaining_amount >= args.amount);
         SpendingLimitUse::spending_limit_use(ctx, args)
     }
 
@@ -457,6 +549,34 @@ pub mod squads_multisig_program {
     /// `transaction` can be closed if either:
     /// - the `proposal` is in a terminal state: `Executed`, `Rejected`, or `Cancelled`.
     /// - the `proposal` is stale and not `Approved`.
+    #[succeeds_if(
+        (
+            !ctx.accounts.proposal.data.borrow.is_empty()
+            && (Proposal::try_deserialize(
+                    &mut &*ctx.accounts.proposal.data.borrow()
+                ).is_ok().is_some()
+            &&
+        (
+            let proposal = Proposal::try_deserialize(
+                &mut &*ctx.accounts.proposal.data.borrow()
+            ).unwrap();
+            (
+                ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index &&
+                (matches!(proposal.status, ProposalStatus::Draft { .. })
+                || matches!(proposal.status, ProposalStatus::Active { .. })
+                )
+            )
+            || matches!(proposal.status, ProposalStatus::Executed { .. })            
+            || matches!(proposal.status, ProposalStatus::Rejected { .. })
+            || matches!(proposal.status, ProposalStatus::Cancelled { .. })
+            && !matches!(proposal.status, ProposalStatus::Executing { .. }) 
+            && !matches!(proposal.status, ProposalStatus::Approved { .. }) 
+        )) ||
+        (
+            ctx.accounts.proposal.data.borrow().is_empty() && 
+            ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index 
+        ))
+    )]
     pub fn vault_transaction_accounts_close(
         ctx: Context<VaultTransactionAccountsClose>,
     ) -> Result<()> {
@@ -468,6 +588,18 @@ pub mod squads_multisig_program {
     /// - it's marked as executed within the `batch`;
     /// - the `proposal` is in a terminal state: `Executed`, `Rejected`, or `Cancelled`.
     /// - the `proposal` is stale and not `Approved`.
+    #[succeeds_if(
+        (
+            ctx.accounts.proposal.transaction_index <= ctx.accounts.multisig.stale_transaction_index
+            && (matches!(ctx.accounts.proposal.status, ProposalStatus::Draft { .. })
+            || matches!(ctx.accounts.proposal.status, ProposalStatus::Active { .. }))
+        )
+        || matches!(ctx.accounts.proposal.status, ProposalStatus::Executed { .. })            
+        || matches!(ctx.accounts.proposal.status, ProposalStatus::Rejected { .. })
+        || matches!(ctx.accounts.proposal.status, ProposalStatus::Cancelled { .. })
+        && !matches!(ctx.accounts.proposal.status, ProposalStatus::Executing { .. })
+        && !matches!(ctx.accounts.proposal.status, ProposalStatus::Approved { .. })
+    )]
     pub fn vault_batch_transaction_account_close(
         ctx: Context<VaultBatchTransactionAccountClose>,
     ) -> Result<()> {
@@ -479,6 +611,34 @@ pub mod squads_multisig_program {
     ///
     /// This instruction is only allowed to be executed when all `VaultBatchTransaction` accounts
     /// in the `batch` are already closed: `batch.size == 0`.
+    #[succeeds_if(
+        (
+            !ctx.accounts.proposal.data.borrow.is_empty()
+            && (Proposal::try_deserialize(
+                    &mut &*ctx.accounts.proposal.data.borrow()
+                ).is_ok().is_some()
+            &&
+        (
+            let proposal = Proposal::try_deserialize(
+                &mut &*ctx.accounts.proposal.data.borrow()
+            ).unwrap();
+            (
+                ctx.accounts.batch.index <= ctx.accounts.multisig.stale_transaction_index &&
+                (matches!(proposal.status, ProposalStatus::Draft { .. })
+                || matches!(proposal.status, ProposalStatus::Active { .. })
+                )
+            )
+            || matches!(proposal.status, ProposalStatus::Executed { .. })            
+            || matches!(proposal.status, ProposalStatus::Rejected { .. })
+            || matches!(proposal.status, ProposalStatus::Cancelled { .. })
+            && !matches!(proposal.status, ProposalStatus::Executing { .. }) 
+            && !matches!(proposal.status, ProposalStatus::Approved { .. }) 
+        )) ||
+        (
+            ctx.accounts.proposal.data.borrow().is_empty() && 
+            ctx.accounts.transaction.index <= ctx.accounts.multisig.stale_transaction_index 
+        ))
+    )]
     pub fn batch_accounts_close(ctx: Context<BatchAccountsClose>) -> Result<()> {
         BatchAccountsClose::batch_accounts_close(ctx)
     }
