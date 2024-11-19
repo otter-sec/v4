@@ -11,7 +11,7 @@ pub const MAX_BUFFER_SIZE: usize = 10;
 
 #[account]
 #[invariant(
-    self.invarinat().is_ok()
+    self.invariant().is_ok()
 )]
 #[derive(Default, Debug)]
 pub struct TransactionBuffer {

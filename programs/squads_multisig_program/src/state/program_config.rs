@@ -5,7 +5,7 @@ use crate::errors::MultisigError;
 /// Global program configuration account.
 #[account]
 #[invariant(
-    self.invarinat().is_ok()
+    self.invariant().is_ok()
 )]
 #[derive(InitSpace)]
 pub struct ProgramConfig {
