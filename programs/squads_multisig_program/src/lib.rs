@@ -257,6 +257,7 @@ pub mod squads_multisig_program {
         args: VaultTransactionCreateArgs,
     ) -> Result<()> {
         kani::assume(ctx.accounts.transaction_buffer.buffer.len() <= MAX_BUFFER_SIZE);
+        kani::assume(ctx.accounts.transaction_buffer.final_buffer_size as usize <= MAX_BUFFER_SIZE);
         VaultTransactionCreateFromBuffer::vault_transaction_create_from_buffer(ctx, args)
     }
 
