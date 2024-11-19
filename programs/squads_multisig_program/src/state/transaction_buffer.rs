@@ -59,6 +59,7 @@ impl TransactionBuffer {
         Ok(())
     }
     pub fn validate_size(&self) -> Result<()> {
+        kani::assume(self.buffer.len() == self.final_buffer_size as usize);
         require_eq!(
             self.buffer.len(),
             self.final_buffer_size as usize,

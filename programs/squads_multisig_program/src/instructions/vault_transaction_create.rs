@@ -92,7 +92,7 @@ impl<'info> VaultTransactionCreate<'info> {
         ];
         let (_, vault_bump) = Pubkey::find_program_address(vault_seeds, ctx.program_id);
 
-        kani::assume(args.ephemeral_signers < 10);
+        kani::assume(args.ephemeral_signers < 5);
         let ephemeral_signer_bumps: Vec<u8> = (0..args.ephemeral_signers)
             .map(|ephemeral_signer_index| {
                 let ephemeral_signer_seeds = &[

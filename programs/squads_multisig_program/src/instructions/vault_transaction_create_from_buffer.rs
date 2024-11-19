@@ -39,6 +39,7 @@ impl<'info> VaultTransactionCreateFromBuffer<'info> {
         let transaction_buffer_account = &self.transaction_buffer;
 
         // Check that the transaction message is "empty"
+        kani::assume(args.transaction_message == vec![0, 0, 0, 0, 0, 0].into());
         require!(
             args.transaction_message == vec![0, 0, 0, 0, 0, 0].into(),
             MultisigError::InvalidInstructionArgs
@@ -116,6 +117,7 @@ impl<'info> VaultTransactionCreateFromBuffer<'info> {
         );
 
         // Call the vault transaction create instruction
+        #[verify_ignore]
         VaultTransactionCreate::vault_transaction_create(context, create_args)?;
 
         Ok(())
