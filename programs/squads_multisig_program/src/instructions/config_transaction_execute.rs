@@ -212,8 +212,10 @@ impl<'info> ConfigTransactionExecute<'info> {
 
                     let mut members = members.to_vec();
                     // Make sure members are sorted.
+                    #[cfg(any(kani, feature = "kani"))]
                     kani::assume(members.windows(2).all(|w| w[0] < w[1]));
-                    // members.sort();
+                    #[cfg(not(any(kani, feature = "kani")))]
+                    members.sort();
 
                     // Serialize the SpendingLimit data into the account info.
                     let spending_limit = SpendingLimit {
