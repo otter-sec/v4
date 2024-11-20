@@ -136,6 +136,7 @@ impl BatchExecuteTransaction<'_> {
         let transaction_message = &transaction.message;
         let num_lookups = transaction_message.address_table_lookups.len();
 
+        kani::assume(ctx.remaining_accounts.len() <=4);
         let message_account_infos = ctx
             .remaining_accounts
             .get(num_lookups..)
@@ -150,11 +151,9 @@ impl BatchExecuteTransaction<'_> {
         let (ephemeral_signer_keys, ephemeral_signer_seeds) =
             derive_ephemeral_signers(batch_key, &transaction.ephemeral_signer_bumps);
 
-        let address_lookup_table_account_infos = address_lookup_table_account_infos.to_vec();
-        let message_account_infos = message_account_infos.to_vec();
+        let address_lookup_table_account_infos = address_lookup_table_account_infos.to_vec().into();
+        let message_account_infos = message_account_infos.to_vec().into();
 
-
-        #[verify_ignore]
         let executable_message = ExecutableTransactionMessage::new_validated(
             &transaction_message,
             &message_account_infos,
