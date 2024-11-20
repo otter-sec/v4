@@ -77,7 +77,8 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
 
         // CHECK: `account_infos` should exactly match the number of accounts mentioned in the message.
         kani::assume(message_account_infos.len() <= 3);
-        kani::assume(message_account_infos.len() == message.num_all_account_keys());
+        kani::assume(message.account_keys.len() <= 3);
+        kani::assume(message.num_all_account_keys()  == message_account_infos.len());
         require_eq!(
             message_account_infos.len(),
             message.num_all_account_keys(),
