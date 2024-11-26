@@ -344,6 +344,8 @@ pub mod squads_multisig_program {
             ctx.accounts.transaction.message.address_table_lookups.len() + ctx.accounts.transaction.message.num_all_account_keys()   
     })]
     pub fn vault_transaction_execute(ctx: Context<VaultTransactionExecute>) -> Result<()> {
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() == 5);
+        kani::assume(ctx.remaining_accounts.len() == 5);
         VaultTransactionExecute::vault_transaction_execute(ctx)
     }
 
@@ -385,8 +387,8 @@ pub mod squads_multisig_program {
         && ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size
     )]
     pub fn batch_execute_transaction(ctx: Context<BatchExecuteTransaction>) -> Result<()> {
-        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() <= 3);
-        kani::assume(ctx.remaining_accounts.len() <= 3);
+        kani::assume(ctx.accounts.transaction.ephemeral_signer_bumps.len() == 5);
+        kani::assume(ctx.remaining_accounts.len() == 5);
         kani::assume(ctx.accounts.batch.executed_transaction_index < ctx.accounts.batch.size);
         BatchExecuteTransaction::batch_execute_transaction(ctx)
     }

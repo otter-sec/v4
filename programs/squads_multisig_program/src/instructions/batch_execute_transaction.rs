@@ -170,7 +170,6 @@ impl BatchExecuteTransaction<'_> {
         // `self.message.instructions`, therefore after this point no more
         // references or usages of `self.message` should be made to avoid
         // faulty behavior.
-        #[verify_ignore]
         executable_message.execute_message(
             vault_seeds,
             &ephemeral_signer_seeds,

@@ -20,8 +20,8 @@ kani = ["anchor-lang/kani", "anchor-spl/kani"]
 testing = []
 
 [dependencies]
-anchor-lang = { package = "onchor", path = "/Users/meumar/Desktop/Osec/Squads/solana-verify/anchor" }
-anchor-spl = { package = "onchor_spl", path = "/Users/meumar/Desktop/Osec/Squads/solana-verify/anchor_spl" }
-solana-address-lookup-table-program = { package = "address_lookup_table", path = "/Users/meumar/Desktop/Osec/Squads/solana-verify/address_lookup_table" }
+anchor-lang = { package = "onchor", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor" }
+anchor-spl = { package = "onchor_spl", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/anchor_spl" }
+solana-address-lookup-table-program = { package = "address_lookup_table", path = "/Users/swaroopmaddu/workspace/osec/Security/solana-verify/address_lookup_table" }
 # solana-program = "1.17.4"
 # solana-security-txt = "1.1.1"
