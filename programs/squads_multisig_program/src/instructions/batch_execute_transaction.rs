@@ -174,6 +174,8 @@ impl BatchExecuteTransaction<'_> {
             vault_seeds,
             &ephemeral_signer_seeds,
             protected_accounts,
+            &multisig_key,
+            &batch_key
         )?;
 
         // Increment the executed transaction index.
