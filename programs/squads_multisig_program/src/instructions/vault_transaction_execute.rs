@@ -135,8 +135,7 @@ impl VaultTransactionExecute<'_> {
 
         let address_lookup_table_account_infos: Vec<AccountInfo<'_>> = address_lookup_table_account_infos.to_vec().into();
         let message_account_infos: Vec<AccountInfo<'_>> = message_account_infos.to_vec().into();
-        
-        #[verify_ignore]
+
         let executable_message = ExecutableTransactionMessage::new_validated(
             &transaction_message,
             &message_account_infos,
@@ -153,7 +152,6 @@ impl VaultTransactionExecute<'_> {
         // `self.message.instructions`, therefore after this point no more
         // references or usages of `self.message` should be made to avoid
         // faulty behavior.
-        #[verify_ignore]
         executable_message.execute_message(
             vault_seeds,
             &ephemeral_signer_seeds,
