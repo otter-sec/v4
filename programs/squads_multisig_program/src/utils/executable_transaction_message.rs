@@ -219,6 +219,8 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
         vault_seeds: &[&[u8]],
         ephemeral_signer_seeds: &[Vec<Vec<u8>>],
         protected_accounts: &[Pubkey],
+        multisig_key: &Pubkey, //Added just for verification
+        transaction_key: &Pubkey,
     ) -> Result<()> {
         // First round of type conversion; from Vec<Vec<Vec<u8>>> to Vec<Vec<&[u8]>>.
         let ephemeral_signer_seeds = &ephemeral_signer_seeds
@@ -232,6 +234,14 @@ impl<'a, 'info> ExecutableTransactionMessage<'a, 'info> {
             .collect::<Vec<&[&[u8]]>>();
         // Add the vault seeds.
         signer_seeds.push(&vault_seeds);
+
+        signer_seeds.iter().for_each(|seed: &&[&[u8]]| {
+            kani::assert(
+                seed.contains(&multisig_key.as_ref()) ||
+                seed.contains(&transaction_key.as_ref()),
+                "No association",
+            );
+        });
 
         // NOTE: `self.to_instructions_and_accounts()` calls `take()` on
         // `self.message.instructions`, therefore after this point no more

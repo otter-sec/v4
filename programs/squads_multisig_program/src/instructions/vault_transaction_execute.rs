@@ -156,6 +156,8 @@ impl VaultTransactionExecute<'_> {
             vault_seeds,
             &ephemeral_signer_seeds,
             protected_accounts,
+            &multisig_key,
+            &transaction_key
         )?;
 
         // Mark the proposal as executed.
