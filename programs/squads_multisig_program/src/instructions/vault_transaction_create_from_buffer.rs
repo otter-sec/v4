@@ -117,7 +117,6 @@ impl<'info> VaultTransactionCreateFromBuffer<'info> {
         );
 
         // Call the vault transaction create instruction
-        #[verify_ignore]
         VaultTransactionCreate::vault_transaction_create(context, create_args)?;
 
         Ok(())
